@@ -1,13 +1,5 @@
+// A composite modifier key. Almost guaranteed to not clash with any application / OS keybindings.
 var hyper = ['cmd', 'alt', 'shift', 'ctrl'];
-
-api.bind('E', ['cmd'], function() {
-  var win = Window.focusedWindow();
-  var frame = win.frame();
-  frame.x += 10;
-  frame.height -= 10;
-  win.setFrame(frame);
-  return true;
-});
 
 // ### Helper methods `Window`
 //
