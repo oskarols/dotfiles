@@ -1,6 +1,15 @@
 // A composite modifier key. Almost guaranteed to not clash with any application / OS keybindings.
 var hyper = ['cmd', 'alt', 'shift', 'ctrl'];
 
+var padding = 0;
+
+var rageOfDongers="ヽ༼ ಠ益ಠ ༽ﾉ";
+
+// TODO:
+// Figure out why windows have different APIs 
+// in some places, i.e. when focusing vs using w/ 
+// refocusing focusWindow
+
 // ### Helper methods `Window`
 //
 // #### Window#toGrid()
@@ -19,20 +28,29 @@ function windowToGrid(window, x, y, width, height) {
   var screen = window.screen().frameWithoutDockOrMenu();
 
   window.setFrame({
-  x: Math.round( x * screen.width ) + padding + screen.x,
-  y: Math.round( y * screen.height ) + padding + screen.y,
-  width: Math.round( width * screen.width ) - ( 2 * padding ),
-  height: Math.round( height * screen.height ) - ( 2 * padding )
+    x:      Math.round( x *      screen.width )  + padding + screen.x,
+    y:      Math.round( y *      screen.height ) + padding + screen.y,
+    width:  Math.round( width *  screen.width )  - ( 2 * padding ),
+    height: Math.round( height * screen.height ) - ( 2 * padding )
   });
 
   window.focusWindow();
 
   return window;
 }
-var padding = 0;
 
-function toGrid(x, y, width, height) {
-  windowToGrid(Window.focusedWindow(), x, y, width, height);
+MousePosition.centerOn = function(point, rect) {
+  MousePosition.restore({
+    x: point.x + (rect.width  / 2),
+    y: point.y + (rect.height / 2)
+  });
+}
+
+MousePosition.centerOnWindow = function(window) {
+  var size = window.size(),
+      topLeft = window.topLeft();
+
+  MousePosition.centerOn(topLeft, size);
 }
 
 Window.prototype.toGrid = function(x, y, width, height) {
@@ -49,13 +67,13 @@ App.allWithTitle = function( title ) {
   });
 };
 
-var rageOfDongers="ヽ༼ ಠ益ಠ ༽ﾉ";
-
 
 App.focusOrStart = function ( title ) {
   var apps = App.allWithTitle( title );
   if (_.isEmpty(apps)) {
     api.alert(rageOfDongers + " Starting " + title);
+
+    // Which screen is this started on?
     api.launch(title);
     return;
   }
@@ -73,6 +91,7 @@ App.focusOrStart = function ( title ) {
 
   activeWindows.forEach(function(win) {
     win.focusWindow();
+    MousePosition.centerOnWindow(win);
   });
 };
 
@@ -97,6 +116,8 @@ function moveToScreen(win, screen) {
     width: Math.round(frame.width * xRatio),
     height: Math.round(frame.height * yRatio)
   });
+
+  refocusWindow(win);
 }
 
 function circularLookup(array, index) {
@@ -126,7 +147,15 @@ function rightOneMonitor() {
   rotateMonitors(1);
 }
 
+function focusedWindowToFullscreen() {
+  Window.focusedWindow().toFullScreen();
+  MousePosition.centerOnWindow(Window.focusedWindow());
+}
 
+function refocusWindow (window) {
+  window = window || Window;
+  MousePosition.centerOnWindow(window.focusedWindow());
+}
 
 // Convenience method, doing exactly what it says.  Returns the window
 // instance.
@@ -134,12 +163,13 @@ Window.prototype.toFullScreen = function() {
   return this.toGrid( 0, 0, 1, 1 );
 };
 
-api.bind('f', hyper, function() {
-  var foo  = Window.focusedWindow();
-  foo.toGrid(0,0,1,1);
-});
+api.bind('f', hyper, focusedWindowToFullscreen);
+api.bind('d', hyper, refocusWindow);
 
-api.bind('1', hyper,  function() {App.focusOrStart('Sublime Text 2');});
+api.bind('q', hyper, rightOneMonitor);
+api.bind('e', hyper, leftOneMonitor);
+
+api.bind('1', hyper,  function() {App.focusOrStart('Sublime Text');});
 api.bind('2', hyper,  function() {App.focusOrStart('iTerm');});
 api.bind('3', hyper , function() {App.focusOrStart('Google Chrome');});
 api.bind('4', hyper , function() {App.focusOrStart('Firefox');});
@@ -147,6 +177,3 @@ api.bind('5', hyper , function() {App.focusOrStart('Evernote');});
 api.bind('6', hyper , function() {App.focusOrStart('Spotify');});
 api.bind('7', hyper , function() {App.focusOrStart('Colloquy');});
 api.bind('8', hyper , function() {App.focusOrStart('Skype');});
-
-api.bind('q', hyper, rightOneMonitor);
-api.bind('e', hyper, leftOneMonitor);
