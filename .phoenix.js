@@ -96,6 +96,25 @@ App.focusOrStart = function (title) {
   if (_.isEmpty(activeWindows)) api.alert(" All windows minimized for " + title);
 };
 
+App.prototype.findWindow = function(findBy) {
+  return _.find(this.visibleWindows(), findBy);
+};
+
+App.prototype.findWindowMatchingTitle = function(title) {
+  var regexp = new RegExp(title);
+
+  return this.findWindow(function(win) {
+    return regexp.test(win.title());
+  });
+};
+
+App.prototype.findWindowNotMatchingTitle = function(title) {
+  var regexp = new RegExp(title);
+
+  return this.findWindow(function(win) {
+    return !regexp.test(win.title());
+  });
+};
 
 ///////////////////////////
 // Misc Helper Functions //
