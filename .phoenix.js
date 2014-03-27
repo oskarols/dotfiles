@@ -80,11 +80,11 @@ App.allWithTitle = function(title) {
 App.focusOrStart = function (title) {
   var apps = App.allWithTitle(title),
       restoreCursor = false,
-      previouslyStartedAnotherApp = (savedTitle && savedTitle !== title),
+      previouslyStartedAnotherApp = (savedTitle !== title),
       previouslyStartedThisApp = (savedTitle === title && appStateSnapshots[title]);
 
   if (previouslyStartedAnotherApp || previouslyStartedThisApp)
-    appStateSnapshots[savedTitle] = MousePosition.capture()
+    appStateSnapshots[savedTitle] = MousePosition.capture();
 
   if (appStateSnapshots[title]) {
     restoreCursor = true;
