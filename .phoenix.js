@@ -68,6 +68,9 @@ Window.prototype.centerCursor = function() {
 // App Extensions //
 ////////////////////
 
+var appStateSnapshots = {};
+var savedTitle = undefined;
+
 App.allWithTitle = function(title) {
   return _(this.runningApps()).filter(function(app) {
     return app.title() === title;
@@ -75,7 +78,20 @@ App.allWithTitle = function(title) {
 };
 
 App.focusOrStart = function (title) {
-  var apps = App.allWithTitle(title);
+  var apps = App.allWithTitle(title),
+      restoreCursor = false,
+      previouslyStartedAnotherApp = (savedTitle && savedTitle !== title),
+      previouslyStartedThisApp = (savedTitle === title && appStateSnapshots[title]);
+
+  if (previouslyStartedAnotherApp || previouslyStartedThisApp)
+    appStateSnapshots[savedTitle] = MousePosition.capture()
+
+  if (appStateSnapshots[title]) {
+    restoreCursor = true;
+    MousePosition.restore(appStateSnapshots[title]);
+  }
+
+  savedTitle = title;
 
   if (_.isEmpty(apps)) {
     api.alert(rageOfDongers + " Starting " + title);
@@ -89,7 +105,7 @@ App.focusOrStart = function (title) {
     .reject(function(win) { return win.isWindowMinimized(); })
     .tap(function(all) {
       _.invoke(all, 'focusWindow');
-      _.invoke(all, 'centerCursor');
+      if (!restoreCursor) _.invoke(all, 'centerCursor');
     })
     .value();
 
