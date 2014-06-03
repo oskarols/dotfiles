@@ -115,7 +115,6 @@ App.focusOrStart = function (title) {
     .value();
 
   activeWindows.forEach(function(window) {
-    api.alert('Title: ' + window.title());
     window.focusWindow();
     if (!restoreCursor) window.centerCursor();
   });
