@@ -1,5 +1,15 @@
+// Ideas:
+//
+// Using hyper as a toggle key for last shown window
+// IE you'd hold it in, and open the last toggled window
+// until you'd let go.
+
 var padding = 0;
-var rageOfDongers = "ヽ༼ ಠ益ಠ ༽ﾉ";
+var flair = "ᕙ(⇀‸↼‶)ᕗ";
+
+Array.prototype.isEmpty = function() {
+  return this.length === 0;
+};
 
 //////////////////////////////
 // MousePosition extensions //
@@ -18,7 +28,6 @@ MousePosition.centerOnWindow = function(window) {
 
   MousePosition.centerOn(topLeft, size);
 }
-
 
 //////////////////////
 // Window extension //
@@ -93,8 +102,8 @@ App.focusOrStart = function (title) {
 
   savedTitle = title;
 
-  if (_.isEmpty(apps)) {
-    api.alert(rageOfDongers + " Starting " + title);
+  if (apps.isEmpty()) {
+    api.alert(flair + " Starting " + title);
     api.launch(title);
     return;
   }
@@ -103,13 +112,17 @@ App.focusOrStart = function (title) {
     .map(function(x) { return x.allWindows(); })
     .flatten()
     .reject(function(win) { return win.isWindowMinimized(); })
-    .tap(function(all) {
-      _.invoke(all, 'focusWindow');
-      if (!restoreCursor) _.invoke(all, 'centerCursor');
-    })
     .value();
 
-  if (_.isEmpty(activeWindows)) api.alert(" All windows minimized for " + title);
+  activeWindows.forEach(function(window) {
+    api.alert('Title: ' + window.title());
+    window.focusWindow();
+    if (!restoreCursor) window.centerCursor();
+  });
+
+  // Either has minimized windows, or no windows
+  // (apps can be open, but have no windows)
+  if (activeWindows.isEmpty()) api.launch(title);
 };
 
 App.prototype.findWindow = function(findBy) {
@@ -223,11 +236,11 @@ api.bind('d', hyper, function() { Window.focusedWindow().centerCursor(); });
 api.bind('q', hyper, rightOneMonitor);
 api.bind('e', hyper, leftOneMonitor);
 
-api.bind('1', hyper, function() { App.focusOrStart('Sublime Text');  });
-api.bind('2', hyper, function() { App.focusOrStart('iTerm');         });
-api.bind('3', hyper, function() { App.focusOrStart('Google Chrome'); });
-api.bind('4', hyper, function() { App.focusOrStart('Firefox');       });
-api.bind('5', hyper, function() { App.focusOrStart('Evernote');      });
-api.bind('6', hyper, function() { App.focusOrStart('Spotify');       });
-api.bind('7', hyper, function() { App.focusOrStart('Colloquy');      });
-api.bind('8', hyper, function() { App.focusOrStart('Skype');         });
+api.bind('1', hyper, function() { App.focusOrStart('Sublime Text 3'); });
+api.bind('2', hyper, function() { App.focusOrStart('iTerm');          });
+api.bind('3', hyper, function() { App.focusOrStart('Google Chrome');  });
+api.bind('4', hyper, function() { App.focusOrStart('Firefox');        });
+api.bind('5', hyper, function() { App.focusOrStart('Evernote');       });
+api.bind('6', hyper, function() { App.focusOrStart('Spotify');        });
+api.bind('7', hyper, function() { App.focusOrStart('Colloquy');       });
+api.bind('8', hyper, function() { App.focusOrStart('Skype');          });
