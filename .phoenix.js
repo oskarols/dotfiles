@@ -7,6 +7,7 @@
 var padding = 0;
 var flair = "ᕙ(⇀‸↼‶)ᕗ";
 
+
 Array.prototype.isEmpty = function() {
   return this.length === 0;
 }
@@ -16,6 +17,8 @@ Array.prototype.circularLookup = function(index) {
     return this[this.length + (index % this.length)];
   return this[index % this.length];
 }
+
+
 
 //////////////////////////////
 // MousePosition extensions //
@@ -239,7 +242,7 @@ api.bind('d', hyper, function() { Window.focusedWindow().centerCursor(); });
 api.bind('q', hyper, function() { Window.focusedWindow().rightOneMonitor(); });
 api.bind('e', hyper, function() { Window.focusedWindow().leftOneMonitor();  });
 
-api.bind('1', hyper, function() { App.focusOrStart('Sublime Text 3'); });
+api.bind('1', hyper, function() { App.focusOrStart('Sublime Text');   });
 api.bind('2', hyper, function() { App.focusOrStart('iTerm');          });
 api.bind('3', hyper, function() { App.focusOrStart('Google Chrome');  });
 api.bind('4', hyper, function() { App.focusOrStart('Firefox');        });
