@@ -124,12 +124,10 @@ Window.prototype.centerCursor = function() {
 
 Window.prototype.allScreens = function() {
   var currentScreen = this.screen(),
-      allScreens = [currentScreen],
-      screen;
+      allScreens = [currentScreen];
 
-  while (screen != currentScreen) {
-    screen = currentScreen.nextScreen();
-    allScreens.push(screen);
+  for (var s = currentScreen.nextScreen(); s != this.screen(); s = s.nextScreen()) {
+    allScreens.push(s);
   }
 
   allScreens = _(allScreens).sortBy(function(s) { return s.frameWithoutDockOrMenu().x; });
