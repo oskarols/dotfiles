@@ -114,7 +114,7 @@ Window.prototype.moveToScreen = function(screen) {
     height: Math.round(frame.height * yRatio)
   });
 
-  this.focusWindow();
+  return this;
 }
 
 Window.prototype.centerCursor = function() {
@@ -124,12 +124,10 @@ Window.prototype.centerCursor = function() {
 
 Window.prototype.allScreens = function() {
   var currentScreen = this.screen(),
-      allScreens = [currentScreen],
-      screen;
+      allScreens = [currentScreen];
 
-  while (screen != currentScreen) {
-    screen = currentScreen.nextScreen();
-    allScreens.push(screen);
+  for (var s = currentScreen.nextScreen(); s != this.screen(); s = s.nextScreen()) {
+    allScreens.push(s);
   }
 
   allScreens = _(allScreens).sortBy(function(s) { return s.frameWithoutDockOrMenu().x; });
@@ -143,7 +141,7 @@ Window.prototype.rotateMonitors = function(offset) {
       currentScreenIndex = allScreens.indexOf(currentScreen),
       newScreen = allScreens.circularLookup(currentScreenIndex + offset);
 
-  this.moveToScreen(newScreen);
+  this.moveToScreen(newScreen).centerCursor();
 }
 
 Window.prototype.leftOneMonitor = function() {
