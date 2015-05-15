@@ -11,19 +11,7 @@ function launchOrFocus(name)
 	end
 end
 
-function fullScreenCurrent()
-	local win = hs.window.focusedWindow()
-	
-	local f = win:frame()
-	local screen = win:screen()
-	local max = screen:frame()
 
-	f.x = max.x
-	f.y = max.y
-	f.w = max.w
-	f.h = max.h
-	win:setFrame(f)
-end
 
 function manipulateScreen(func)
 	return function()
@@ -35,6 +23,14 @@ function manipulateScreen(func)
 		func(window, windowFrame, screen, screenFrame)
 	end
 end
+
+fullScreenCurrent = manipulateScreen(function(window, windowFrame, screen, screenFrame)
+	windowFrame.x = screenFrame.x
+	windowFrame.y = screenFrame.y
+	windowFrame.w = screenFrame.w
+	windowFrame.h = screenFrame.h
+	window:setFrame(windowFrame)
+end)
 
 screenToRight = manipulateScreen(function(window, windowFrame, screen, screenFrame)
 	windowFrame.x = screenFrame.w / 2
@@ -73,8 +69,6 @@ hs.hotkey.bind(hyper, "H", function()
 	local current = hs.application.frontmostApplication()
 	current:selectMenuItem({"Help"})
 end)
-
-
 
 hs.hotkey.bind(hyper, "R", function()
   hs.reload()
