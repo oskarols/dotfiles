@@ -1,2 +1,4 @@
-# Add Sublime Text 2 cmd line
-ln -s "/Applications/Sublime Text 2.app/Contents/SharedSupport/bin/subl" /usr/local/bin/subl
+# YOSEMITE CONFIG
+
+# make the window animation changes (i.e. when fullscreening, changing via hs etc) intantaneous
+defaults write -g NSWindowResizeTime -float 0.003
