@@ -5,13 +5,81 @@ hyper = {"cmd", "ctrl", "alt", "shift"}
 partial = hs.fnutils.partial
 sequence = hs.fnutils.sequence
 
+function centerOnApplication(applicationName) 
+
+end
+
+
+function test()
+	local title = hs.window.focusedWindow():application():title()
+
+	hs.alert.show(title)
+end 
+
+appState = {}
+
+function t (table) 
+	for key, val in pairs(table) do  -- Table iteration.
+	  print(key, val)
+	end
+end
+
 function launchOrFocus(name)
+
+	-- switching to an app, states:
+	-- * focusing an app
+	-- * focusing an app, mouse over another app
+	local saveState = function() 
+		local window = hs.window.focusedWindow()
+		
+		if window == nil then 
+			return nil
+		end
+
+		local applicationName = window:application()
+
+		if applicationName == nil then 
+			return nil
+		end
+
+		applicationName = applicationName:title()
+
+		hs.alert.show('saving state of ' .. applicationName)
+
+
+		appState[applicationName] = {
+			["screen"] = hs.mouse.getCurrentScreen(),
+			["mouse"] =  hs.mouse.getRelativePosition() -- mouse or nil
+		}
+
+	end
+
+	local lookupState = function(applicationName)
+		return appState[applicationName]
+	end
+
+	local restoreState = function(state)
+		hs.mouse.setAbsolutePosition(state.mouse)
+	end
+
 	return function()
+		
+		saveState()
+
+		local lastState = lookupState(name)
+
+		-- hs.alert.show(hs.inspect.inspect(lastState))
+
+		if lastState then 
+			restoreState(lastState)	
+		end
+
 		hs.application.launchOrFocus(name)
 	end
 end
 
-
+-- disable animations
+hs.window.animationDuration = 0
 
 function manipulateScreen(func)
 	return function()
@@ -48,6 +116,7 @@ screenToLeft = manipulateScreen(function(window, windowFrame, screen, screenFram
 	window:setFrame(windowFrame)
 end)
 
+hs.hotkey.bind(hyper, "Q", test)
 hs.hotkey.bind(hyper, "1", launchOrFocus("Sublime Text"))
 hs.hotkey.bind(hyper, "2", launchOrFocus("iTerm"))
 hs.hotkey.bind(hyper, "3", launchOrFocus("Google Chrome"))
