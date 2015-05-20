@@ -33,51 +33,51 @@ sequence = hs.fnutils.sequence
 -- create a bound key to remove playing song from vox
 
 function centerOnApplication(applicationName) 
-	-- hs.geometry.rectMidPoint(rect) -> point
+    -- hs.geometry.rectMidPoint(rect) -> point
 end
 
 i = require('hs.inspect')
 dbg = function(...)
-	print(i.inspect(...))
+  print(i.inspect(...))
 end
 
 function isFunction(a)
-	return type(a) == "function"
+  return type(a) == "function"
 end
 
 function maybe(func)
-	return function (argument)
-		if argument then
-			return func(argument)
-		else
-			return nil
-		end
-	end
+  return function (argument)
+    if argument then
+      return func(argument)
+    else
+      return nil
+    end
+  end
 end
 
 -- Flips the order of parameters passed to a function
 function flip(func)
-	return function(...)
-		return func(table.unpack(reverse({...})))
-	end
+  return function(...)
+    return func(table.unpack(reverse({...})))
+  end
 end
 
 -- gets propery or method value 
 -- on a table
 function result(obj, property)
-	if not obj then return nil end
+  if not obj then return nil end
 
-	if isFunction(property) then
-		return property(obj)
-	elseif isFunction(obj[property]) then -- string
-		return obj[property](obj) -- <- this will be the source of bugs
-	else
-		return obj[property]
-	end
+  if isFunction(property) then
+    return property(obj)
+  elseif isFunction(obj[property]) then -- string
+    return obj[property](obj) -- <- this will be the source of bugs
+  else
+    return obj[property]
+  end
 end
 
 function getProperty(property)
-	return partial(flip(result), property)
+    return partial(flip(result), property)
 end
 
 local resultRight = flip(result)
@@ -99,46 +99,46 @@ function compose(...)
   local functions = {...}
 
   return function (...)
-      local result
+    local result
 
-      for i, func in ipairs(functions) do
-      	if i == 1 then
-      		result = func(...)
-      	else
-      		result = func(result)
-      	end
+    for i, func in ipairs(functions) do
+      if i == 1 then
+        result = func(...)
+      else
+        result = func(result)
       end
-
-      return result
     end
+
+    return result
+  end
 end
 
 function tap (a)
-	dbg(a)
-	return a
+  dbg(a)
+  return a
 end
 
 local mouseCircle = nil
 local mouseCircleTimer = nil
 
 function mouseHighlight()
-    -- Delete an existing highlight if it exists
-    result(mouseCircle, "delete")
-    result(mouseCircleTimer, "stop")
+  -- Delete an existing highlight if it exists
+  result(mouseCircle, "delete")
+  result(mouseCircleTimer, "stop")
 
-    -- Get the current co-ordinates of the mouse pointer
-    mousepoint = hs.mouse.get()
+  -- Get the current co-ordinates of the mouse pointer
+  mousepoint = hs.mouse.get()
 
-    -- Prepare a big red circle around the mouse pointer
-    mouseCircle = hs.drawing.circle(hs.geometry.rect(mousepoint.x-40, mousepoint.y-40, 80, 80))
-    mouseCircle:setFillColor({["red"]=0,["blue"]=1,["green"]=0,["alpha"]=0.5})
-    mouseCircle:setStrokeWidth(0)
-    mouseCircle:show()
+  -- Prepare a big red circle around the mouse pointer
+  mouseCircle = hs.drawing.circle(hs.geometry.rect(mousepoint.x-40, mousepoint.y-40, 80, 80))
+  mouseCircle:setFillColor({["red"]=0,["blue"]=1,["green"]=0,["alpha"]=0.5})
+  mouseCircle:setStrokeWidth(0)
+  mouseCircle:show()
 
-    -- Set a timer to delete the circle after 3 seconds
-    mouseCircleTimer = hs.timer.doAfter(0.2, function() 
-    	mouseCircle:delete() 
-    end)
+  -- Set a timer to delete the circle after 3 seconds
+  mouseCircleTimer = hs.timer.doAfter(0.2, function() 
+    mouseCircle:delete() 
+  end)
 end
 
 appState = {}
@@ -147,34 +147,34 @@ unpack = table.unpack
 
 function variadic_maybe (func)
 
-	-- the basic problem here is that it dumps
-	-- nil values, i.e there's no way of telling ..
-	function all (...)
-		local args = pack2{...}
-		hs.alert.show(hs.inspect.inspect(...), hs.inspect.inspect(args))
-		for i, v in pairs(args) do
-			print(v)
-			if not v then 
-				print("FOO")
-				return false 
-			end
-		end
-		return true
-	end
+  -- the basic problem here is that it dumps
+  -- nil values, i.e there's no way of telling ..
+  function all (...)
+    local args = pack2{...}
+    hs.alert.show(hs.inspect.inspect(...), hs.inspect.inspect(args))
+    for i, v in pairs(args) do
+      print(v)
+      if not v then 
+        print("FOO")
+        return false 
+      end
+    end
+    return true
+  end
 
-	return function (...)
-		hs.alert.show(hs.inspect.inspect(...))
-		if all(...) then
-			return func(...)
-		else
-			return nil
-		end
-	end
+  return function (...)
+    hs.alert.show(hs.inspect.inspect(...))
+    if all(...) then
+      return func(...)
+    else
+      return nil
+    end
+  end
 end
 
 
 screenOrder = {
-	"Color LCD"
+    "Color LCD"
 }
 
 screenMoveMode = hs.hotkey.modal.new(hyper, "s")
@@ -182,27 +182,27 @@ screenMoveMode = hs.hotkey.modal.new(hyper, "s")
 inspect = hs.inspect.inspect
 
 function tt(a)
-	hs.alert.show(inspect(a))
+  hs.alert.show(inspect(a))
 end
 
 function screenMoveMode:entered()
-	hs.alert.show('Mode: Move to screen', 10)
+  hs.alert.show('Mode: Move to screen', 10)
 
-	-- main display = 1
-	-- screen to 
-	
-	manualScreenOrder = {
-		[69677504] = 1 -- Macbook display
-	}
-	screenMappings = {}
-	allScreens = hs.screen.allScreens()
+  -- main display = 1
+  -- screen to 
+  
+  manualScreenOrder = {
+      [69677504] = 1 -- Macbook display
+  }
+  screenMappings = {}
+  allScreens = hs.screen.allScreens()
 
-	for i, screen in pairs(allScreens) do
-		local id = screen:id()
-		local name = screen:name()
+  for i, screen in pairs(allScreens) do
+    local id = screen:id()
+    local name = screen:name()
 
-		hs.alert(string.format('display: %s real ID: %s', name, id), 10)
-	end
+    hs.alert(string.format('display: %s real ID: %s', name, id), 10)
+  end
 
 end
 function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
@@ -212,77 +212,77 @@ screenMoveMode:bind({}, 'J', function() hs.alert.show("Pressed J") end)
 
 function launchOrFocus(name)
 
-	-- switching to an app, states:
-	-- * focusing an app
-	-- * focusing an app, mouse over another app
-	local saveState = function()
-		local function saveApplication (applicationName)
-			appState[applicationName] = {
-				["screen"] = hs.mouse.getCurrentScreen(),
-				["mouse"] =  hs.mouse.getRelativePosition() -- mouse or nil
-			}
-		end
+  -- switching to an app, states:
+  -- * focusing an app
+  -- * focusing an app, mouse over another app
+  local saveState = function()
+    local function saveApplication (applicationName)
+      appState[applicationName] = {
+        ["screen"] = hs.mouse.getCurrentScreen(),
+        ["mouse"] =  hs.mouse.getRelativePosition() -- mouse or nil
+      }
+    end
 
-		compose(
-			getProperty("application"),
-			getProperty("title"),
-			saveApplication
-		)(hs.window.focusedWindow())
-	end
+    compose(
+      getProperty("application"),
+      getProperty("title"),
+      saveApplication
+    )(hs.window.focusedWindow())
+  end
 
-	local lookupState = partial(result, appState)
+  local lookupState = partial(result, appState)
 
-	local restoreState = function(state)
-		hs.mouse.setAbsolutePosition(state.mouse)
-	end
+  local restoreState = function(state)
+    hs.mouse.setAbsolutePosition(state.mouse)
+  end
 
-	return function()
-		saveState()
+  return function()
+    saveState()
 
-		local lastState = lookupState(name)
+    local lastState = lookupState(name)
 
-		if lastState then
-			restoreState(lastState)
-		end
+    if lastState then
+        restoreState(lastState)
+    end
 
-		hs.application.launchOrFocus(name)
-		mouseHighlight()
-	end
+    hs.application.launchOrFocus(name)
+    mouseHighlight()
+  end
 end
 
 function manipulateScreen(func)
-	return function()
-		local window = hs.window.focusedWindow()
-		local windowFrame = window:frame()
-		local screen = window:screen()
-		local screenFrame = screen:frame()	
+  return function()
+    local window = hs.window.focusedWindow()
+    local windowFrame = window:frame()
+    local screen = window:screen()
+    local screenFrame = screen:frame()  
 
-		func(window, windowFrame, screen, screenFrame)
-	end
+    func(window, windowFrame, screen, screenFrame)
+  end
 end
 
 fullScreenCurrent = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-	windowFrame.x = screenFrame.x
-	windowFrame.y = screenFrame.y
-	windowFrame.w = screenFrame.w
-	windowFrame.h = screenFrame.h
-	window:setFrame(windowFrame)
+  windowFrame.x = screenFrame.x
+  windowFrame.y = screenFrame.y
+  windowFrame.w = screenFrame.w
+  windowFrame.h = screenFrame.h
+  window:setFrame(windowFrame)
 end)
 
 screenToRight = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-	windowFrame.x = screenFrame.w / 2
-	windowFrame.y = screenFrame.y
-	windowFrame.w = screenFrame.w / 2
-	windowFrame.h = screenFrame.h
-	window:setFrame(windowFrame)
+  windowFrame.x = screenFrame.w / 2
+  windowFrame.y = screenFrame.y
+  windowFrame.w = screenFrame.w / 2
+  windowFrame.h = screenFrame.h
+  window:setFrame(windowFrame)
 end)
 
 screenToLeft = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-	windowFrame.x = screenFrame.x
-	windowFrame.y = screenFrame.y
-	windowFrame.w = screenFrame.w / 2
-	windowFrame.h = screenFrame.h
-	window:setFrame(windowFrame)
+  windowFrame.x = screenFrame.x
+  windowFrame.y = screenFrame.y
+  windowFrame.w = screenFrame.w / 2
+  windowFrame.h = screenFrame.h
+  window:setFrame(windowFrame)
 end)
 
 hs.hotkey.bind(hyper, "Q", test)
@@ -301,61 +301,62 @@ hs.hotkey.bind(hyper, "D", screenToRight)
 hs.hotkey.bind(hyper, "A", screenToLeft)
 
 local getLanguage = hs.fnutils.cycle({
-	"Swedish - Pro",
-	"U.S. International - PC"
+  "Swedish - Pro",
+  "U.S. International - PC"
 })
 
 hs.hotkey.bind(hyper, "L", function()
-	local language = getLanguage()
+  local language = getLanguage()
 
-	-- http://stackoverflow.com/a/23741934
-	script = [[
-	tell application "System Events" to tell process "SystemUIServer"
-        tell (menu bar item 1 of menu bar 1 whose description is "text input")
-            select
-            tell menu 1
-                click (first menu item whose title = (get "%s"))
-            end tell
-        end tell
+  -- http://stackoverflow.com/a/23741934
+  script = [[
+  tell application "System Events" to tell process "SystemUIServer"
+    tell (menu bar item 1 of menu bar 1 whose description is "text input")
+      select
+      tell menu 1
+        click (first menu item whose title = (get "%s"))
+      end tell
     end tell
-	]]
+  end tell
+  ]]
 
-	hs.applescript.applescript(script:format(language))
+  hs.applescript.applescript(script:format(language))
 end)
 
 
 -- Temporarily bind an application to be toggled by the V key
 -- useful for once-in-a-while applications like Preview
 boundApplication = nil
+
 hs.hotkey.bind(hyper, "C", function()
-	appName = hs.window.focusedWindow():application():title()
+  appName = hs.window.focusedWindow():application():title()
 
-	if boundApplication then 
-		boundApplication:disable() 
-	end
-	hs.alert(appName)
+  if boundApplication then 
+    boundApplication:disable() 
+  end
+  hs.alert(appName)
 
-	boundApplication = hs.hotkey.bind(hyper, "V", launchOrFocus(appName))
+  boundApplication = hs.hotkey.bind(hyper, "V", launchOrFocus(appName))
 
-	-- https://github.com/Hammerspoon/hammerspoon/issues/184#issuecomment-102835860
-	boundApplication:disable()
-	boundApplication:enable()
+  -- https://github.com/Hammerspoon/hammerspoon/issues/184#issuecomment-102835860
+  boundApplication:disable()
+  boundApplication:enable()
 
-	hs.alert(string.format("Binding: %s", appName))
+  hs.alert(string.format("Binding: %s", appName))
 end)
 
 --click menu item "Delete and Move to Trash" of menu 1 of menu bar item "Edit" of menu bar 1
 
 hs.hotkey.bind(hyper, "I", function()
-    hs.hints.windowHints()
+  hs.hints.windowHints()
 end)
 
 hs.hotkey.bind(hyper, "H", function()
-	local current = hs.application.frontmostApplication()
-	current:selectMenuItem({"Help"})
+  local current = hs.application.frontmostApplication()
+  current:selectMenuItem({"Help"})
 end)
 
 hs.hotkey.bind(hyper, "R", function()
   hs.reload()
-	hs.alert.show("Config loaded")
+  hs.alert.show("Config loaded")
 end)
