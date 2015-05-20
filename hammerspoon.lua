@@ -5,13 +5,25 @@ hyper = {"cmd", "ctrl", "alt", "shift"}
 partial = hs.fnutils.partial
 sequence = hs.fnutils.sequence
 
--- todo
+-- TODOS
 
 -- if switching from a non-bound app to an explicitly bound one
 -- there should be a key to switch back
 
 -- bind current app to key
 
+-- handle finder having more than 1 window
+
+-- applications having multiple windows is very poorly handled
+
+-- security policy based on the wifi ID connected to,
+-- i.e. locks
+-- maybe base this on the location somehow via GPS?
+
+-- need some bridge between browser and database or notes of URIs
+-- similar to PathFinder
+
+-- globally turn spellcheck off?
 
 function centerOnApplication(applicationName) 
 	-- hs.geometry.rectMidPoint(rect) -> point
@@ -303,6 +315,29 @@ hs.hotkey.bind(hyper, "Z", launchOrFocus("Finder"))
 hs.hotkey.bind(hyper, "F", fullScreenCurrent)
 hs.hotkey.bind(hyper, "D", screenToRight)
 hs.hotkey.bind(hyper, "A", screenToLeft)
+
+local getLanguage = hs.fnutils.cycle({
+	"Swedish - Pro",
+	"U.S. International - PC"
+})
+
+hs.hotkey.bind(hyper, "L", function()
+	local language = getLanguage()
+
+	-- http://stackoverflow.com/a/23741934
+	script = [[
+	tell application "System Events" to tell process "SystemUIServer"
+        tell (menu bar item 1 of menu bar 1 whose description is "text input")
+            select
+            tell menu 1
+                click (first menu item whose title = (get "%s"))
+            end tell
+        end tell
+    end tell
+	]]
+
+	hs.applescript.applescript(string.format(script, language))
+end)
 
 
 -- Temporarily bind an application to be toggled by the V key
