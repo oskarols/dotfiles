@@ -213,17 +213,20 @@ function launchOrFocus(name)
 		}
 	end
 
+	local invoke = function()
+
+	end
+
+	local compose = function()
+
+	end
+
 	-- TODO: WIP
 	local saveStateFunctional = function()
 		local window = hs.window.focusedWindow()
 
-		function getApplication(window)
-			return window:application()
-		end
-
-		function getApplicationTitle(application)
-			return application:title()
-		end
+		local getWindowApplication = invoke("window", window.application)
+		local getApplicationTitle =  invoke("application", application.title)
 
 		function saveApplication (applicationName)
 			hs.alert.show('saving state of ' .. applicationName)
@@ -233,11 +236,11 @@ function launchOrFocus(name)
 			}
 		end
 
-		-- compose(
-		-- 	maybe(getApplication),
-		-- 	maybe(getApplicationTitle)
-		-- 	maybe(saveApplication)
-		-- )(hs.window.focusedWindow)
+		return compose(
+			maybe(getWindowApplication),
+			maybe(getApplicationTitle),
+			maybe(saveApplication)
+		)(hs.window.focusedWindow)
 
 	end
 
@@ -336,7 +339,7 @@ hs.hotkey.bind(hyper, "L", function()
     end tell
 	]]
 
-	hs.applescript.applescript(string.format(script, language))
+	hs.applescript.applescript(script:format(language))
 end)
 
 
@@ -356,7 +359,6 @@ hs.hotkey.bind(hyper, "C", function()
 	-- https://github.com/Hammerspoon/hammerspoon/issues/184#issuecomment-102835860
 	boundApplication:disable()
 	boundApplication:enable()
-	
 
 	hs.alert(string.format("Binding: %s", appName))
 end)
