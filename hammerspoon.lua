@@ -30,8 +30,6 @@ sequence = hs.fnutils.sequence
 
 -- have some sort of bookmark application separate from chrome and firefox (perhaps that's evernote?)
 
--- create a bound key to remove playing song from vox
-
 function centerOnApplication(applicationName) 
     -- hs.geometry.rectMidPoint(rect) -> point
 end
@@ -345,9 +343,24 @@ hs.hotkey.bind(hyper, "C", function()
   hs.alert(string.format("Binding: %s", appName))
 end)
 
---click menu item "Delete and Move to Trash" of menu 1 of menu bar item "Edit" of menu bar 1
-
 hs.hotkey.bind(hyper, "I", function()
+  local apps = hs.application.runningApplications()
+  local vox = hs.fnutils.filter(apps, function(app) return result(app, 'title') == 'VOX' end)
+  local currentlyFocusedWindow = hs.window.focusedWindow()
+  
+  if vox then
+    windows = vox[1]:allWindows()
+    window = windows[1]
+    window:focus()
+
+    vox[1]:selectMenuItem({"Edit", "Delete and Move to Trash"})
+    vox[1]:selectMenuItem({"Controls", "Play"})
+  end
+
+  currentlyFocusedWindow:focus()
+end)
+
+hs.hotkey.bind(hyper, "K", function()
   hs.hints.windowHints()
 end)
 
