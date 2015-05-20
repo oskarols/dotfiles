@@ -2,6 +2,9 @@ flair = "ᕙ(⇀‸↼‶)ᕗ";
 
 hyper = {"cmd", "ctrl", "alt", "shift"}
 
+-- disable animations
+hs.window.animationDuration = 0
+
 partial = hs.fnutils.partial
 sequence = hs.fnutils.sequence
 
@@ -25,8 +28,94 @@ sequence = hs.fnutils.sequence
 
 -- globally turn spellcheck off?
 
+-- have some sort of bookmark application separate from chrome and firefox (perhaps that's evernote?)
+
+-- create a bound key to remove playing song from vox
+
 function centerOnApplication(applicationName) 
 	-- hs.geometry.rectMidPoint(rect) -> point
+end
+
+i = require('hs.inspect')
+dbg = function(...)
+	print(i.inspect(...))
+end
+
+function isFunction(a)
+	return type(a) == "function"
+end
+
+function maybe(func)
+	return function (argument)
+		if argument then
+			return func(argument)
+		else
+			return nil
+		end
+	end
+end
+
+-- Flips the order of parameters passed to a function
+function flip(func)
+	return function(...)
+		return func(table.unpack(reverse({...})))
+	end
+end
+
+-- gets propery or method value 
+-- on a table
+function result(obj, property)
+	if not obj then return nil end
+
+	if isFunction(property) then
+		return property(obj)
+	elseif isFunction(obj[property]) then -- string
+		return obj[property](obj) -- <- this will be the source of bugs
+	else
+		return obj[property]
+	end
+end
+
+function getProperty(property)
+	return partial(flip(result), property)
+end
+
+local resultRight = flip(result)
+
+-- from Moses
+--- Reverses values in a given array. The passed-in array should not be sparse.
+-- @name reverse
+-- @tparam table array an array
+-- @treturn table a copy of the given array, reversed
+function reverse(array)
+  local _array = {}
+  for i = #array,1,-1 do
+    _array[#_array+1] = array[i]
+  end
+  return _array
+end
+
+function compose(...)
+  local functions = {...}
+
+  return function (...)
+      local result
+
+      for i, func in ipairs(functions) do
+      	if i == 1 then
+      		result = func(...)
+      	else
+      		result = func(result)
+      	end
+      end
+
+      return result
+    end
+end
+
+function tap (a)
+	dbg(a)
+	return a
 end
 
 local mouseCircle = nil
@@ -34,14 +123,12 @@ local mouseCircleTimer = nil
 
 function mouseHighlight()
     -- Delete an existing highlight if it exists
-    if mouseCircle then
-        mouseCircle:delete()
-        if mouseCircleTimer then
-            mouseCircleTimer:stop()
-        end
-    end
+    result(mouseCircle, "delete")
+    result(mouseCircleTimer, "stop")
+
     -- Get the current co-ordinates of the mouse pointer
     mousepoint = hs.mouse.get()
+
     -- Prepare a big red circle around the mouse pointer
     mouseCircle = hs.drawing.circle(hs.geometry.rect(mousepoint.x-40, mousepoint.y-40, 80, 80))
     mouseCircle:setFillColor({["red"]=0,["blue"]=1,["green"]=0,["alpha"]=0.5})
@@ -49,61 +136,14 @@ function mouseHighlight()
     mouseCircle:show()
 
     -- Set a timer to delete the circle after 3 seconds
-    mouseCircleTimer = hs.timer.doAfter(0.2, function() mouseCircle:delete() end)
+    mouseCircleTimer = hs.timer.doAfter(0.2, function() 
+    	mouseCircle:delete() 
+    end)
 end
-
-
-
-function test()
-	local title = hs.window.focusedWindow():application():title()
-
-	hs.alert.show(title)
-end 
 
 appState = {}
 
 unpack = table.unpack
-
-function t (table) 
-	for key, val in pairs(table) do  -- Table iteration.
-	  print(key, val)
-	end
-end
-
--- https://gist.github.com/walterlua/978150
-table.indexOf = function(t, object)
-    if "table" == type(t) then
-        for i = 1, #t do
-            if object == t[i] then
-                return i
-            end
-        end
-        return -1
-    else
-        error("table.indexOf expects table for first argument, " .. type(t) .. " given")
-    end
-end
-
-local NIL = {} -- placeholder value for nil, storable in table.
-function pack2(...)
-  local n = select('#', ...)
-  local t = {...}
-  for i = 1,n do
-    if t[i] == nil then
-      t[i] = NIL
-    end
-  end
-  return t
-end
-
-function unpack2(t, k, n)
-  k = k or 1
-  n = n or #t
-  if k > n then return end
-  local v = t[k]
-  if v == NIL then v = nil end
-  return v, unpack2(t, k + 1, n)
-end
 
 function variadic_maybe (func)
 
@@ -161,31 +201,14 @@ function screenMoveMode:entered()
 		local id = screen:id()
 		local name = screen:name()
 
-
-
 		hs.alert(string.format('display: %s real ID: %s', name, id), 10)
 	end
 
-	
 end
 function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
 
 screenMoveMode:bind({}, 'escape', function() screenMoveMode:exit() end)
 screenMoveMode:bind({}, 'J', function() hs.alert.show("Pressed J") end)
-
--- function mm(a) print(a.." you're a real peopleperson!") end
--- mm = maybe(mm)
--- mm(nil)
-
-function maybe (func)
-	return function (argument)
-		if argument then
-			return func(argument)
-		else
-			return nil
-		end
-	end
-end
 
 function launchOrFocus(name)
 
@@ -193,61 +216,21 @@ function launchOrFocus(name)
 	-- * focusing an app
 	-- * focusing an app, mouse over another app
 	local saveState = function()
-		local window = hs.window.focusedWindow()
-		
-		if window == nil then 
-			return nil
-		end
-
-		local applicationName = window:application()
-
-		if applicationName == nil then 
-			return nil
-		end
-
-		applicationName = applicationName:title()
-
-		appState[applicationName] = {
-			["screen"] = hs.mouse.getCurrentScreen(),
-			["mouse"] =  hs.mouse.getRelativePosition() -- mouse or nil
-		}
-	end
-
-	local invoke = function()
-
-	end
-
-	local compose = function()
-
-	end
-
-	-- TODO: WIP
-	local saveStateFunctional = function()
-		local window = hs.window.focusedWindow()
-
-		local getWindowApplication = invoke("window", window.application)
-		local getApplicationTitle =  invoke("application", application.title)
-
-		function saveApplication (applicationName)
-			hs.alert.show('saving state of ' .. applicationName)
+		local function saveApplication (applicationName)
 			appState[applicationName] = {
 				["screen"] = hs.mouse.getCurrentScreen(),
 				["mouse"] =  hs.mouse.getRelativePosition() -- mouse or nil
 			}
 		end
 
-		return compose(
-			maybe(getWindowApplication),
-			maybe(getApplicationTitle),
-			maybe(saveApplication)
-		)(hs.window.focusedWindow)
-
+		compose(
+			getProperty("application"),
+			getProperty("title"),
+			saveApplication
+		)(hs.window.focusedWindow())
 	end
 
-
-	local lookupState = function(applicationName)
-		return appState[applicationName]
-	end
+	local lookupState = partial(result, appState)
 
 	local restoreState = function(state)
 		hs.mouse.setAbsolutePosition(state.mouse)
@@ -258,17 +241,14 @@ function launchOrFocus(name)
 
 		local lastState = lookupState(name)
 
-		if lastState then 
-			restoreState(lastState)	
+		if lastState then
+			restoreState(lastState)
 		end
 
 		hs.application.launchOrFocus(name)
 		mouseHighlight()
 	end
 end
-
--- disable animations
-hs.window.animationDuration = 0
 
 function manipulateScreen(func)
 	return function()
@@ -312,6 +292,7 @@ hs.hotkey.bind(hyper, "3", launchOrFocus("Google Chrome"))
 hs.hotkey.bind(hyper, "4", launchOrFocus("Firefox"))
 hs.hotkey.bind(hyper, "5", launchOrFocus("Evernote"))
 hs.hotkey.bind(hyper, "6", launchOrFocus("Spotify"))
+hs.hotkey.bind(hyper, "7", launchOrFocus("Vox"))
 
 hs.hotkey.bind(hyper, "Z", launchOrFocus("Finder"))
 
@@ -362,6 +343,8 @@ hs.hotkey.bind(hyper, "C", function()
 
 	hs.alert(string.format("Binding: %s", appName))
 end)
+
+--click menu item "Delete and Move to Trash" of menu 1 of menu bar item "Edit" of menu bar 1
 
 hs.hotkey.bind(hyper, "I", function()
     hs.hints.windowHints()
