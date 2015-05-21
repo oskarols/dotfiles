@@ -30,6 +30,8 @@ sequence = hs.fnutils.sequence
 
 -- have some sort of bookmark application separate from chrome and firefox (perhaps that's evernote?)
 
+-- modal if there are multiple windows, else just normal hotkey
+
 function centerOnApplication(applicationName) 
     -- hs.geometry.rectMidPoint(rect) -> point
 end
@@ -139,7 +141,7 @@ function mouseHighlight()
   end)
 end
 
-appState = {}
+
 
 unpack = table.unpack
 
@@ -177,12 +179,6 @@ screenOrder = {
 
 screenMoveMode = hs.hotkey.modal.new(hyper, "s")
 
-inspect = hs.inspect.inspect
-
-function tt(a)
-  hs.alert.show(inspect(a))
-end
-
 function screenMoveMode:entered()
   hs.alert.show('Mode: Move to screen', 10)
 
@@ -208,27 +204,30 @@ function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
 screenMoveMode:bind({}, 'escape', function() screenMoveMode:exit() end)
 screenMoveMode:bind({}, 'J', function() hs.alert.show("Pressed J") end)
 
+applicationStates = {}
+
 function launchOrFocus(name)
 
   -- switching to an app, states:
   -- * focusing an app
   -- * focusing an app, mouse over another app
   local saveState = function()
-    local function saveApplication (applicationName)
-      appState[applicationName] = {
+    local function saveApplicationState (applicationName)
+      applicationStates[applicationName] = {
         ["screen"] = hs.mouse.getCurrentScreen(),
         ["mouse"] =  hs.mouse.getRelativePosition() -- mouse or nil
       }
     end
 
     compose(
+      getProperty("focusedWindow"),
       getProperty("application"),
       getProperty("title"),
-      saveApplication
-    )(hs.window.focusedWindow())
+      saveApplicationState
+    )(hs.window)
   end
 
-  local lookupState = partial(result, appState)
+  local lookupState = partial(result, applicationStates)
 
   local restoreState = function(state)
     hs.mouse.setAbsolutePosition(state.mouse)
@@ -260,11 +259,7 @@ function manipulateScreen(func)
 end
 
 fullScreenCurrent = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-  windowFrame.x = screenFrame.x
-  windowFrame.y = screenFrame.y
-  windowFrame.w = screenFrame.w
-  windowFrame.h = screenFrame.h
-  window:setFrame(windowFrame)
+  window:setFrame(screenFrame)
 end)
 
 screenToRight = manipulateScreen(function(window, windowFrame, screen, screenFrame)
@@ -283,7 +278,6 @@ screenToLeft = manipulateScreen(function(window, windowFrame, screen, screenFram
   window:setFrame(windowFrame)
 end)
 
-hs.hotkey.bind(hyper, "Q", test)
 hs.hotkey.bind(hyper, "1", launchOrFocus("Sublime Text"))
 hs.hotkey.bind(hyper, "2", launchOrFocus("iTerm"))
 hs.hotkey.bind(hyper, "3", launchOrFocus("Google Chrome"))
@@ -353,11 +347,20 @@ hs.hotkey.bind(hyper, "I", function()
     window = windows[1]
     window:focus()
 
+    vox[1]:selectMenuItem({"Controls", "Go to Current Track"})
     vox[1]:selectMenuItem({"Edit", "Delete and Move to Trash"})
-    vox[1]:selectMenuItem({"Controls", "Play"})
+    
+    -- need some sort of timeout here I guess ..
+    
+
+    -- Have to use long timeout, else doesn't 
+    hs.timer.doAfter(1, function()
+      vox[1]:selectMenuItem({"Controls", "Play"})
+      currentlyFocusedWindow:focus()
+    end)
   end
 
-  currentlyFocusedWindow:focus()
+  
 end)
 
 hs.hotkey.bind(hyper, "K", function()
