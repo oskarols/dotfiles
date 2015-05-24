@@ -8,12 +8,21 @@ hs.window.animationDuration = 0
 partial = hs.fnutils.partial
 sequence = hs.fnutils.sequence
 
+local fnutils = require "hs.fnutils"
+local partial = fnutils.partial
+local indexOf = fnutils.indexOf
+local filter = fnutils.filter
+
+local window = require "hs.window"
+local alert = require "hs.alert"
+local grid = require "hs.grid"
+
+require "fntools"
+
 -- TODOS
 
 -- if switching from a non-bound app to an explicitly bound one
 -- there should be a key to switch back
-
--- bind current app to key
 
 -- handle finder having more than 1 window
 
@@ -26,13 +35,20 @@ sequence = hs.fnutils.sequence
 -- need some bridge between browser and database or notes of URIs
 -- similar to PathFinder
 
--- globally turn spellcheck off?
-
 -- have some sort of bookmark application separate from chrome and firefox (perhaps that's evernote?)
 
 -- modal if there are multiple windows, else just normal hotkey
 
-function centerOnApplication(applicationName) 
+-- holding a focus button for a longer period will upon release refocus
+-- the previous application
+
+-- you should be able to indicate size changes using two keys to judge
+-- the distance between those keys
+-- e.g. E -> T would increase cell size by two to the right
+
+-- hyper + C / V should save a specific window + application, not just app
+
+function centerOnApplication(applicationName)
     -- hs.geometry.rectMidPoint(rect) -> point
 end
 
@@ -41,77 +57,8 @@ dbg = function(...)
   print(i.inspect(...))
 end
 
-function isFunction(a)
-  return type(a) == "function"
-end
 
-function maybe(func)
-  return function (argument)
-    if argument then
-      return func(argument)
-    else
-      return nil
-    end
-  end
-end
 
--- Flips the order of parameters passed to a function
-function flip(func)
-  return function(...)
-    return func(table.unpack(reverse({...})))
-  end
-end
-
--- gets propery or method value 
--- on a table
-function result(obj, property)
-  if not obj then return nil end
-
-  if isFunction(property) then
-    return property(obj)
-  elseif isFunction(obj[property]) then -- string
-    return obj[property](obj) -- <- this will be the source of bugs
-  else
-    return obj[property]
-  end
-end
-
-function getProperty(property)
-    return partial(flip(result), property)
-end
-
-local resultRight = flip(result)
-
--- from Moses
---- Reverses values in a given array. The passed-in array should not be sparse.
--- @name reverse
--- @tparam table array an array
--- @treturn table a copy of the given array, reversed
-function reverse(array)
-  local _array = {}
-  for i = #array,1,-1 do
-    _array[#_array+1] = array[i]
-  end
-  return _array
-end
-
-function compose(...)
-  local functions = {...}
-
-  return function (...)
-    local result
-
-    for i, func in ipairs(functions) do
-      if i == 1 then
-        result = func(...)
-      else
-        result = func(result)
-      end
-    end
-
-    return result
-  end
-end
 
 function tap (a)
   dbg(a)
@@ -136,42 +83,10 @@ function mouseHighlight()
   mouseCircle:show()
 
   -- Set a timer to delete the circle after 3 seconds
-  mouseCircleTimer = hs.timer.doAfter(0.2, function() 
-    mouseCircle:delete() 
+  mouseCircleTimer = hs.timer.doAfter(0.2, function()
+    mouseCircle:delete()
   end)
 end
-
-
-
-unpack = table.unpack
-
-function variadic_maybe (func)
-
-  -- the basic problem here is that it dumps
-  -- nil values, i.e there's no way of telling ..
-  function all (...)
-    local args = pack2{...}
-    hs.alert.show(hs.inspect.inspect(...), hs.inspect.inspect(args))
-    for i, v in pairs(args) do
-      print(v)
-      if not v then 
-        print("FOO")
-        return false 
-      end
-    end
-    return true
-  end
-
-  return function (...)
-    hs.alert.show(hs.inspect.inspect(...))
-    if all(...) then
-      return func(...)
-    else
-      return nil
-    end
-  end
-end
-
 
 screenOrder = {
     "Color LCD"
@@ -183,8 +98,8 @@ function screenMoveMode:entered()
   hs.alert.show('Mode: Move to screen', 10)
 
   -- main display = 1
-  -- screen to 
-  
+  -- screen to
+
   manualScreenOrder = {
       [69677504] = 1 -- Macbook display
   }
@@ -199,10 +114,7 @@ function screenMoveMode:entered()
   end
 
 end
-function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
 
-screenMoveMode:bind({}, 'escape', function() screenMoveMode:exit() end)
-screenMoveMode:bind({}, 'J', function() hs.alert.show("Pressed J") end)
 
 applicationStates = {}
 
@@ -252,7 +164,7 @@ function manipulateScreen(func)
     local window = hs.window.focusedWindow()
     local windowFrame = window:frame()
     local screen = window:screen()
-    local screenFrame = screen:frame()  
+    local screenFrame = screen:frame()
 
     func(window, windowFrame, screen, screenFrame)
   end
@@ -323,8 +235,8 @@ boundApplication = nil
 hs.hotkey.bind(hyper, "C", function()
   appName = hs.window.focusedWindow():application():title()
 
-  if boundApplication then 
-    boundApplication:disable() 
+  if boundApplication then
+    boundApplication:disable()
   end
   hs.alert(appName)
 
@@ -337,30 +249,235 @@ hs.hotkey.bind(hyper, "C", function()
   hs.alert(string.format("Binding: %s", appName))
 end)
 
-hs.hotkey.bind(hyper, "I", function()
+function getApplicationWindow(applicationName)
   local apps = hs.application.runningApplications()
-  local vox = hs.fnutils.filter(apps, function(app) return result(app, 'title') == 'VOX' end)
-  local currentlyFocusedWindow = hs.window.focusedWindow()
-  
-  if vox then
-    windows = vox[1]:allWindows()
+  local app = hs.fnutils.filter(apps, function(app)
+    return result(app, 'title') == applicationName
+  end)
+
+  if app and #app then
+    windows = app[1]:allWindows()
     window = windows[1]
-    window:focus()
+    return window
+  else
+    return nil
+  end
+end
 
-    vox[1]:selectMenuItem({"Controls", "Go to Current Track"})
-    vox[1]:selectMenuItem({"Edit", "Delete and Move to Trash"})
-    
-    -- need some sort of timeout here I guess ..
-    
+hs.hotkey.bind(hyper, "I", function()
+  local currentlyFocusedWindow = hs.window.focusedWindow()
+  local vox = getApplicationWindow('VOX')
+  local voxapp = vox:application()
+  vox:focus()
 
-    -- Have to use long timeout, else doesn't 
-    hs.timer.doAfter(1, function()
-      vox[1]:selectMenuItem({"Controls", "Play"})
-      currentlyFocusedWindow:focus()
-    end)
+  voxapp:selectMenuItem({"Controls", "Go to Current Track"})
+  vox:selectMenuItem({"Edit", "Delete and Move to Trash"})
+
+  -- Have to use long timeout, else doesn't enable the
+  -- menu items .. :(
+  hs.timer.doAfter(1, function()
+    voxapp:selectMenuItem({"Controls", "Play"})
+    currentlyFocusedWindow:focus()
+  end)
+end)
+
+function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
+
+
+
+grid.GRIDHEIGHT = 3
+grid.GRIDWIDTH = 3
+
+grid.MARGINX = 0
+grid.MARGINY = 0
+
+gridKeys = {
+  { 1,   2,   3,   4,   5,   6,   7 },
+  {"q", "w", "e", "r", "t", "y", "u"},
+  {"a", "s", "d", "f", "g", "h", "j"},
+  {"z", "x", "c", "v", "b", "n", "m"}
+}
+
+local allGridKeys = flatten(gridKeys)
+
+customizedGrid = nil
+
+function setCustomizedGrid(grid)
+  local gridHeight = #newGrid
+  local gridWidth  = #newGrid[1]
+
+  print(string.format("Grid width: %s, height %s", #newGrid[1], #newGrid))
+
+  dbg(newGrid)
+
+  grid.GRIDHEIGHT = gridHeight
+  grid.GRIDWIDTH  = gridWidth
+
+  customizedGrid = grid
+end
+
+-- TODO: refactor to a hs.rect
+-- rename; subdivideGrid
+-- subGrid
+function customizeGrid (grid, topCoord, bottomCoord) -- -> sliced grid
+
+  -- sentinel value, used to indicate a non-value
+  NIL = 999
+
+  -- first pass, set all invalid y-row to NIL
+  for i = 1, #grid do
+    if i < topCoord.y or i > bottomCoord.y then
+      grid[i] = NIL
+    end
   end
 
-  
+  dbg(grid)
+
+  -- nested pass, set all invalid cells to NIL
+  for i = 1, #grid do
+    local row = grid[i]
+    if row ~= NIL then
+      for j = 1, #row do
+        if j < topCoord.x or j > bottomCoord.x then
+          row[j] = NIL
+        end
+      end
+    end
+  end
+
+  -- remove all NIL values
+  function notNill(row)
+    return row ~= NIL
+  end
+
+  grid = filter(grid, notNill)
+
+  for i = 1, #grid do
+    grid[i] = filter(grid[i], notNill)
+  end
+
+  return grid
+end
+
+screenGrid = hs.hotkey.modal.new(hyper, "T")
+
+screenGrid:bind({}, 'escape', function()
+  screenGrid:exit()
+  alert('Exited screenGrid')
+end)
+
+local topLeftGrid = nil
+local bottomRightGrid = nil
+
+-- grid = {
+--   {1, 2, 3},
+--   {4, 5, 6},
+--   {7, 8, 9}
+-- }
+--
+-- > getCoordinates(grid, 9)
+-- { x = 3, y = 3}
+--
+-- > getCoordinates(grid, 4)
+-- { x = 1, y = 2}
+
+function getCoordinates(table, value)
+  local x
+  local y
+
+  for i = 1, #table do
+    local row = table[i]
+
+    for j = 1, #row do
+      if row[j] == value then
+        x = j
+        break
+      end
+    end
+
+    if x then
+      y = i
+      break
+    end
+  end
+
+  return {
+    ['x'] = x,
+    ['y'] = y
+  }
+end
+
+function gridExtensionAdapter(coordinate)
+end
+
+local gridCoordinates = partial(getCoordinates, gridKeys)
+
+function isValidGridKey(char)
+  return indexOf(allGridKeys, char)
+end
+
+
+function screenGrid:entered()
+  local keyupType = hs.eventtap.event.types.keyup
+
+  alert(string.format('Entered Grid Configuration Mode'))
+
+  local function describeGrid()
+
+    local topCoord =    gridCoordinates(topLeftGrid)
+    local bottomCoord = gridCoordinates(bottomRightGrid)
+
+    newGrid = customizeGrid(gridKeys, topCoord, bottomCoord)
+
+    setCustomizedGrid(newGrid)
+  end
+
+  local function listenForKeyToAssign(callback)
+
+    local eventToCharacter = compose(
+      getProperty('getKeyCode'),
+      partial(result, hs.keycodes.map),
+      partial(flip(invoke), 'lower')
+    )
+
+    local event = hs.eventtap.new({keyupType}, function(event)
+      local char = eventToCharacter(event)
+      if char == 't' then
+        return 5
+      end
+
+      alert(string.format('Received char: %s', char))
+
+      if isValidGridKey(char) then
+        callback(char)
+      else
+        alert(string.format('Invalid key %s', char))
+        return true
+      end
+
+      return true
+    end)
+
+    event:start()
+
+    return event
+  end
+
+   a = listenForKeyToAssign(function(char)
+    topLeftGrid = char
+    a:stop()
+
+    b = listenForKeyToAssign(function(char)
+      bottomRightGrid = char
+      b:stop()
+
+      describeGrid()
+    end)
+  end)
+end
+
+hs.hotkey.bind(hyper, "X", function()
+  hs.focus()
 end)
 
 hs.hotkey.bind(hyper, "K", function()
@@ -376,3 +493,36 @@ hs.hotkey.bind(hyper, "R", function()
   hs.reload()
   hs.alert.show("Config loaded")
 end)
+
+hs.hotkey.bind(hyper, "Q", function()
+  window = hs.window.focusedWindow()
+  hs.grid.snap(window)
+end)
+
+evernote = hs.hotkey.modal.new(hyper, "E")
+
+function evernote:entered()
+  alert('Evernote Modal')
+end
+
+local function evernoteExit()
+  evernote:exit()
+  alert('Exited Evernote Modal')
+end
+
+evernote:bind({}, 'escape', evernoteExit)
+
+evernote:bind({}, 'F', function()
+  hs.eventtap.keyStroke({'ctrl', 'cmd'}, 9)
+  evernoteExit()
+end)
+
+evernote:bind({}, 'N', function()
+
+  hs.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
+  evernoteExit()
+end)
+
+function serializeUserData(ud)
+  local serialization = {}
+end
