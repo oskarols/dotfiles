@@ -18,6 +18,7 @@ local alert = require "hs.alert"
 local grid = require "hs.grid"
 
 require "fntools"
+require "extensions"
 
 -- TODOS
 
@@ -48,6 +49,11 @@ require "fntools"
 
 -- hyper + C / V should save a specific window + application, not just app
 
+-- extend the objects with .get('propertyName', {default: Primitive || Function})
+-- like so: :get('focusedWindow'):get('application'):get('title')
+-- would also have good exceptions, be able to say things like
+-- you tried getting the focusedWindow on object <application>
+
 function centerOnApplication(applicationName)
     -- hs.geometry.rectMidPoint(rect) -> point
 end
@@ -55,14 +61,6 @@ end
 i = require('hs.inspect')
 dbg = function(...)
   print(i.inspect(...))
-end
-
-
-
-
-function tap (a)
-  dbg(a)
-  return a
 end
 
 local mouseCircle = nil
@@ -114,81 +112,6 @@ function screenMoveMode:entered()
   end
 
 end
-
-
-applicationStates = {}
-
-function launchOrFocus(name)
-
-  -- switching to an app, states:
-  -- * focusing an app
-  -- * focusing an app, mouse over another app
-  local saveState = function()
-    local function saveApplicationState (applicationName)
-      applicationStates[applicationName] = {
-        ["screen"] = hs.mouse.getCurrentScreen(),
-        ["mouse"] =  hs.mouse.getRelativePosition() -- mouse or nil
-      }
-    end
-
-    compose(
-      getProperty("focusedWindow"),
-      getProperty("application"),
-      getProperty("title"),
-      saveApplicationState
-    )(hs.window)
-  end
-
-  local lookupState = partial(result, applicationStates)
-
-  local restoreState = function(state)
-    hs.mouse.setAbsolutePosition(state.mouse)
-  end
-
-  return function()
-    saveState()
-
-    local lastState = lookupState(name)
-
-    if lastState then
-        restoreState(lastState)
-    end
-
-    hs.application.launchOrFocus(name)
-    mouseHighlight()
-  end
-end
-
-function manipulateScreen(func)
-  return function()
-    local window = hs.window.focusedWindow()
-    local windowFrame = window:frame()
-    local screen = window:screen()
-    local screenFrame = screen:frame()
-
-    func(window, windowFrame, screen, screenFrame)
-  end
-end
-
-fullScreenCurrent = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-  window:setFrame(screenFrame)
-end)
-
-screenToRight = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-  windowFrame.x = screenFrame.w / 2
-  windowFrame.y = screenFrame.y
-  windowFrame.w = screenFrame.w / 2
-  windowFrame.h = screenFrame.h
-  window:setFrame(windowFrame)
-end)
-
-screenToLeft = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-  windowFrame.x = screenFrame.x
-  windowFrame.y = screenFrame.y
-  windowFrame.w = screenFrame.w / 2
-  windowFrame.h = screenFrame.h
-  window:setFrame(windowFrame)
-end)
 
 hs.hotkey.bind(hyper, "1", launchOrFocus("Sublime Text"))
 hs.hotkey.bind(hyper, "2", launchOrFocus("iTerm"))
@@ -249,21 +172,6 @@ hs.hotkey.bind(hyper, "C", function()
   hs.alert(string.format("Binding: %s", appName))
 end)
 
-function getApplicationWindow(applicationName)
-  local apps = hs.application.runningApplications()
-  local app = hs.fnutils.filter(apps, function(app)
-    return result(app, 'title') == applicationName
-  end)
-
-  if app and #app then
-    windows = app[1]:allWindows()
-    window = windows[1]
-    return window
-  else
-    return nil
-  end
-end
-
 hs.hotkey.bind(hyper, "I", function()
   local currentlyFocusedWindow = hs.window.focusedWindow()
   local vox = getApplicationWindow('VOX')
@@ -283,82 +191,6 @@ end)
 
 function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
 
-
-
-grid.GRIDHEIGHT = 3
-grid.GRIDWIDTH = 3
-
-grid.MARGINX = 0
-grid.MARGINY = 0
-
-gridKeys = {
-  { 1,   2,   3,   4,   5,   6,   7 },
-  {"q", "w", "e", "r", "t", "y", "u"},
-  {"a", "s", "d", "f", "g", "h", "j"},
-  {"z", "x", "c", "v", "b", "n", "m"}
-}
-
-local allGridKeys = flatten(gridKeys)
-
-customizedGrid = nil
-
-function setCustomizedGrid(grid)
-  local gridHeight = #newGrid
-  local gridWidth  = #newGrid[1]
-
-  print(string.format("Grid width: %s, height %s", #newGrid[1], #newGrid))
-
-  dbg(newGrid)
-
-  grid.GRIDHEIGHT = gridHeight
-  grid.GRIDWIDTH  = gridWidth
-
-  customizedGrid = grid
-end
-
--- TODO: refactor to a hs.rect
--- rename; subdivideGrid
--- subGrid
-function customizeGrid (grid, topCoord, bottomCoord) -- -> sliced grid
-
-  -- sentinel value, used to indicate a non-value
-  NIL = 999
-
-  -- first pass, set all invalid y-row to NIL
-  for i = 1, #grid do
-    if i < topCoord.y or i > bottomCoord.y then
-      grid[i] = NIL
-    end
-  end
-
-  dbg(grid)
-
-  -- nested pass, set all invalid cells to NIL
-  for i = 1, #grid do
-    local row = grid[i]
-    if row ~= NIL then
-      for j = 1, #row do
-        if j < topCoord.x or j > bottomCoord.x then
-          row[j] = NIL
-        end
-      end
-    end
-  end
-
-  -- remove all NIL values
-  function notNill(row)
-    return row ~= NIL
-  end
-
-  grid = filter(grid, notNill)
-
-  for i = 1, #grid do
-    grid[i] = filter(grid[i], notNill)
-  end
-
-  return grid
-end
-
 screenGrid = hs.hotkey.modal.new(hyper, "T")
 
 screenGrid:bind({}, 'escape', function()
@@ -366,60 +198,7 @@ screenGrid:bind({}, 'escape', function()
   alert('Exited screenGrid')
 end)
 
-local topLeftGrid = nil
-local bottomRightGrid = nil
-
--- grid = {
---   {1, 2, 3},
---   {4, 5, 6},
---   {7, 8, 9}
--- }
---
--- > getCoordinates(grid, 9)
--- { x = 3, y = 3}
---
--- > getCoordinates(grid, 4)
--- { x = 1, y = 2}
-
-function getCoordinates(table, value)
-  local x
-  local y
-
-  for i = 1, #table do
-    local row = table[i]
-
-    for j = 1, #row do
-      if row[j] == value then
-        x = j
-        break
-      end
-    end
-
-    if x then
-      y = i
-      break
-    end
-  end
-
-  return {
-    ['x'] = x,
-    ['y'] = y
-  }
-end
-
-function gridExtensionAdapter(coordinate)
-end
-
-local gridCoordinates = partial(getCoordinates, gridKeys)
-
-function isValidGridKey(char)
-  return indexOf(allGridKeys, char)
-end
-
-
 function screenGrid:entered()
-  local keyupType = hs.eventtap.event.types.keyup
-
   alert(string.format('Entered Grid Configuration Mode'))
 
   local function describeGrid()
@@ -432,44 +211,11 @@ function screenGrid:entered()
     setCustomizedGrid(newGrid)
   end
 
-  local function listenForKeyToAssign(callback)
-
-    local eventToCharacter = compose(
-      getProperty('getKeyCode'),
-      partial(result, hs.keycodes.map),
-      partial(flip(invoke), 'lower')
-    )
-
-    local event = hs.eventtap.new({keyupType}, function(event)
-      local char = eventToCharacter(event)
-      if char == 't' then
-        return 5
-      end
-
-      alert(string.format('Received char: %s', char))
-
-      if isValidGridKey(char) then
-        callback(char)
-      else
-        alert(string.format('Invalid key %s', char))
-        return true
-      end
-
-      return true
-    end)
-
-    event:start()
-
-    return event
-  end
-
    a = listenForKeyToAssign(function(char)
     topLeftGrid = char
-    a:stop()
 
     b = listenForKeyToAssign(function(char)
       bottomRightGrid = char
-      b:stop()
 
       describeGrid()
     end)
@@ -522,7 +268,3 @@ evernote:bind({}, 'N', function()
   hs.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
   evernoteExit()
 end)
-
-function serializeUserData(ud)
-  local serialization = {}
-end

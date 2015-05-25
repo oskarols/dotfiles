@@ -47,6 +47,47 @@ function result(obj, property)
   end
 end
 
+
+invoke = result -- to indicate that we're calling a method
+
+-- property, object
 function getProperty(property)
     return partial(flip(result), property)
+end
+
+
+-- from Moses
+--- Reverses values in a given array. The passed-in array should not be sparse.
+-- @name reverse
+-- @tparam table array an array
+-- @treturn table a copy of the given array, reversed
+function reverse(array)
+  local _array = {}
+  for i = #array,1,-1 do
+    _array[#_array+1] = array[i]
+  end
+  return _array
+end
+
+function compose(...)
+  local functions = {...}
+
+  return function (...)
+    local result
+
+    for i, func in ipairs(functions) do
+      if i == 1 then
+        result = func(...)
+      else
+        result = func(result)
+      end
+    end
+
+    return result
+  end
+end
+
+function tap (a)
+  dbg(a)
+  return a
 end
