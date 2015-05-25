@@ -26,15 +26,8 @@ require "window_tracker"
 
 -- TODOS
 
--- when switching to a window, make sure the mouse is within the boundaries
--- of that window, else center
-
 -- if switching from a non-bound app to an explicitly bound one
 -- there should be a key to switch back
-
--- handle finder having more than 1 window
-
--- applications having multiple windows is very poorly handled
 
 -- security policy based on the wifi ID connected to,
 -- i.e. locks
@@ -60,10 +53,6 @@ require "window_tracker"
 -- like so: :get('focusedWindow'):get('application'):get('title')
 -- would also have good exceptions, be able to say things like
 -- you tried getting the focusedWindow on object <application>
-
-function centerOnApplication(applicationName)
-    -- hs.geometry.rectMidPoint(rect) -> point
-end
 
 local cycleScreens = hs.fnutils.cycle(hs.screen.allScreens())
 
@@ -189,7 +178,7 @@ function screenGrid:entered()
     local topCoord =    gridCoordinates(topLeftGrid)
     local bottomCoord = gridCoordinates(bottomRightGrid)
 
-    newGrid = customizeGrid(gridKeys, topCoord, bottomCoord)
+    newGrid = subGrid(gridKeys, topCoord, bottomCoord)
 
     setCustomizedGrid(newGrid)
   end
@@ -248,7 +237,6 @@ evernote:bind({}, 'F', function()
 end)
 
 evernote:bind({}, 'N', function()
-
   hs.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
   evernoteExit()
 end)

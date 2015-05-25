@@ -19,9 +19,23 @@ dbgf = function (...)
 end
 
 ---------------------------------------------------------
--- COORDINATES, POINTS, RECTS, FRAMES
+-- COORDINATES, POINTS, RECTS, FRAMES, TABLES
 ---------------------------------------------------------
 
+-- > getNextIndex({1,2,3}, 3)
+-- 1
+-- > getNextIndex({1}, 1)
+-- 1
+--
+-- Note: Nice to have to cycle back to beginning
+local function getNextIndex(table, currentIndex)
+  nextIndex = currentIndex + 1
+  if nextIndex > #table then
+    nextIndex = 1
+  end
+
+  return nextIndex
+end
 
 ---------------------------------------------------------
 -- SCREEN
@@ -93,6 +107,24 @@ end
 -- APPLICATION / WINDOW
 ---------------------------------------------------------
 
+local function getNextWindow(applicationName)
+  windows = hs.appfinder.appFromName(applicationName):allWindows()
+
+  -- since chrome has windows which are non-standard, and not
+  -- focusable
+  windows = filter(windows, hs.window.isStandard)
+  windows = filter(windows, hs.window.isVisible)
+
+  lastIndex = indexOf(windows, hs.window.focusedWindow())
+
+  dbgf('finding next window for appName: %s', applicationName)
+  dbgf('resolved last index to: %s', lastIndex)
+
+  dbg(windows[getNextIndex(windows, lastIndex)])
+
+  return windows[getNextIndex(windows, lastIndex)]
+end
+
 function getApplicationWindow(applicationName)
   local apps = hs.application.runningApplications()
   local app = hs.fnutils.filter(apps, function(app)
@@ -113,20 +145,6 @@ applicationStates = {}
 
 -- Needed to cycle upon multiple presses
 lastToggledApplication = nil
-
--- > getNextIndex({1,2,3}, 3)
--- 1
--- > getNextIndex({1}, 1)
--- 1
-local function getNextIndex(table, currentIndex)
-  nextIndex = currentIndex + 1
-  if nextIndex > #table then
-    nextIndex = 1
-  end
-
-  dbg(string.format('next index %s', nextIndex))
-  return nextIndex
-end
 
 function launchOrFocus(name)
 
@@ -174,28 +192,10 @@ function launchOrFocus(name)
         if geometry.isPointInRect(mouseCoordinates, windowFrame) then
           hs.mouse.setAbsolutePosition(mouseCoordinates)
         else
-          centerMouseOnFrame(windowFrame)
+          centerMouseOnRect(windowFrame)
         end
       end)
     )(key)
-  end
-
-  local getNextWindow = function(applicationName)
-    windows = hs.appfinder.appFromName(applicationName):allWindows()
-
-    -- since chrome has windows which are non-standard, and not
-    -- focusable
-    windows = filter(windows, hs.window.isStandard)
-    windows = filter(windows, hs.window.isVisible)
-
-    lastIndex = indexOf(windows, hs.window.focusedWindow())
-
-    dbgf('finding next window for appName: %s', applicationName)
-    dbgf('resolved last index to: %s', lastIndex)
-
-    dbg(windows[getNextIndex(windows, lastIndex)])
-
-    return windows[getNextIndex(windows, lastIndex)]
   end
 
   return function()
@@ -233,7 +233,7 @@ function launchOrFocus(name)
       restoreState(targetWindow)
     else
       local windowFrame = targetWindow:frame()
-      centerMouseOnFrame(windowFrame)
+      centerMouseOnRect(windowFrame)
     end
 
     mouseHighlight()
@@ -280,7 +280,7 @@ function setCustomizedGrid(grid)
   grid.GRIDHEIGHT = gridHeight
   grid.GRIDWIDTH  = gridWidth
 
-  customizedGrid = grid
+  subGrid = grid
 end
 
 
@@ -324,15 +324,26 @@ end
 
 gridCoordinates = partial(getCoordinates, gridKeys)
 
--- TODO: refactor to a hs.rect
--- rename; subdivideGrid
--- subGrid
-function customizeGrid (grid, topCoord, bottomCoord) -- -> sliced grid
+-- Extract a subset of a grid using coordinates
+--
+-- grid = {
+--   {1, 2, 3, 4, 5}
+--   {6, 7, 8, 9, 4}
+--   {9, 8, 8, 7, 6}
+-- }
+--
+-- > subGrid(grid, {x = 2, y = 2}, {x = 3, y = 3})
+-- {
+--   {2, 3}
+--   {7, 8}
+--   {8, 8}
+-- }
+function subGrid (grid, topCoord, bottomCoord) -- -> table
 
   -- sentinel value, used to indicate a non-value
   NIL = 999
 
-  -- first pass, set all invalid y-row to NIL
+  -- first pass, set all y-row outside our coordinates to NIL
   for i = 1, #grid do
     if i < topCoord.y or i > bottomCoord.y then
       grid[i] = NIL
