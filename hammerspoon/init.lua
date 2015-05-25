@@ -65,41 +65,15 @@ function centerOnApplication(applicationName)
     -- hs.geometry.rectMidPoint(rect) -> point
 end
 
-local mouseCircle = nil
-local mouseCircleTimer = nil
-
-function mouseHighlight()
-  -- Delete an existing highlight if it exists
-  result(mouseCircle, "delete")
-  result(mouseCircleTimer, "stop")
-
-  -- Get the current co-ordinates of the mouse pointer
-  mousepoint = hs.mouse.get()
-
-  -- Prepare a big red circle around the mouse pointer
-  mouseCircle = hs.drawing.circle(hs.geometry.rect(mousepoint.x-40, mousepoint.y-40, 80, 80))
-  mouseCircle:setFillColor({["red"]=0,["blue"]=1,["green"]=0,["alpha"]=0.5})
-  mouseCircle:setStrokeWidth(0)
-  mouseCircle:show()
-
-  -- Set a timer to delete the circle after 3 seconds
-  mouseCircleTimer = hs.timer.doAfter(0.2, function()
-    mouseCircle:delete()
-  end)
-end
-
-screenOrder = {
-    "Color LCD"
-}
-
-
-
-
 local cycleScreens = hs.fnutils.cycle(hs.screen.allScreens())
 
 hs.hotkey.bind(hyper, "S", function()
   hs.window.focusedWindow():moveToScreen(cycleScreens())
 end)
+
+screenOrder = {
+    "Color LCD"
+}
 
 screenMoveMode = hs.hotkey.modal.new(hyper, "s")
 function screenMoveMode:entered()
@@ -120,7 +94,6 @@ function screenMoveMode:entered()
 
     hs.alert(string.format('display: %s real ID: %s', name, id), 10)
   end
-
 end
 
 hs.hotkey.bind(hyper, "1", launchOrFocus("Sublime Text"))
@@ -159,7 +132,6 @@ hs.hotkey.bind(hyper, "L", function()
 
   hs.applescript.applescript(script:format(language))
 end)
-
 
 -- Temporarily bind an application to be toggled by the V key
 -- useful for once-in-a-while applications like Preview
@@ -234,6 +206,7 @@ function screenGrid:entered()
 end
 
 hs.hotkey.bind(hyper, "X", function()
+  hs.openConsole()
   hs.focus()
 end)
 
@@ -276,6 +249,6 @@ end)
 
 evernote:bind({}, 'N', function()
 
-  hsX.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
+  hs.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
   evernoteExit()
 end)
