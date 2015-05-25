@@ -5,6 +5,9 @@ hyper = {"cmd", "ctrl", "alt", "shift"}
 -- disable animations
 hs.window.animationDuration = 0
 
+-- hide window shadows
+hs.window.setShadows(false)
+
 partial = hs.fnutils.partial
 sequence = hs.fnutils.sequence
 
@@ -19,8 +22,12 @@ local grid = require "hs.grid"
 
 require "fntools"
 require "extensions"
+require "window_tracker"
 
 -- TODOS
+
+-- when switching to a window, make sure the mouse is within the boundaries
+-- of that window, else center
 
 -- if switching from a non-bound app to an explicitly bound one
 -- there should be a key to switch back
@@ -58,11 +65,6 @@ function centerOnApplication(applicationName)
     -- hs.geometry.rectMidPoint(rect) -> point
 end
 
-i = require('hs.inspect')
-dbg = function(...)
-  print(i.inspect(...))
-end
-
 local mouseCircle = nil
 local mouseCircleTimer = nil
 
@@ -90,8 +92,16 @@ screenOrder = {
     "Color LCD"
 }
 
-screenMoveMode = hs.hotkey.modal.new(hyper, "s")
 
+
+
+local cycleScreens = hs.fnutils.cycle(hs.screen.allScreens())
+
+hs.hotkey.bind(hyper, "S", function()
+  hs.window.focusedWindow():moveToScreen(cycleScreens())
+end)
+
+screenMoveMode = hs.hotkey.modal.new(hyper, "s")
 function screenMoveMode:entered()
   hs.alert.show('Mode: Move to screen', 10)
 
@@ -171,6 +181,7 @@ hs.hotkey.bind(hyper, "C", function()
 
   hs.alert(string.format("Binding: %s", appName))
 end)
+
 
 hs.hotkey.bind(hyper, "I", function()
   local currentlyFocusedWindow = hs.window.focusedWindow()
@@ -265,6 +276,6 @@ end)
 
 evernote:bind({}, 'N', function()
 
-  hs.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
+  hsX.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
   evernoteExit()
 end)
