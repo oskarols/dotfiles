@@ -91,3 +91,9 @@ function tap (a)
   dbg(a)
   return a
 end
+
+i = require('hs.inspect')
+
+dbg = function(...)
+  print(i.inspect(...))
+end
