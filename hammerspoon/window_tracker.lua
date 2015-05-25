@@ -108,7 +108,7 @@ function startWatchingEvents()
 
 end
 
-startWatchingEvents()
+-- startWatchingEvents()
 
 
 
