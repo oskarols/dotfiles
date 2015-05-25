@@ -11,11 +11,25 @@ local filter = fnutils.filter
 local window = require "hs.window"
 local alert = require "hs.alert"
 local grid = require "hs.grid"
+local geometry = require "hs.geometry"
+
+
+dbgf = function (...)
+  return dbg(string.format(...))
+end
+
+---------------------------------------------------------
+-- COORDINATES, POINTS, RECTS, FRAMES
+---------------------------------------------------------
+
 
 ---------------------------------------------------------
 -- SCREEN
 ---------------------------------------------------------
 
+
+-- NOTE, Screens use relative coordinates, all the screens
+-- make up a big screen, so you have do adjust accordingly
 function manipulateScreen(func)
   return function()
     local window = hs.window.focusedWindow()
@@ -32,20 +46,48 @@ fullScreenCurrent = manipulateScreen(function(window, windowFrame, screen, scree
 end)
 
 screenToRight = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-  windowFrame.x = screenFrame.w / 2
-  windowFrame.y = screenFrame.y
   windowFrame.w = screenFrame.w / 2
+  windowFrame.x = (screenFrame.w / 2) + screenFrame.x
   windowFrame.h = screenFrame.h
+
   window:setFrame(windowFrame)
 end)
 
 screenToLeft = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-  windowFrame.x = screenFrame.x
-  windowFrame.y = screenFrame.y
-  windowFrame.w = screenFrame.w / 2
-  windowFrame.h = screenFrame.h
-  window:setFrame(windowFrame)
+  screenFrame.w = screenFrame.w / 2
+  window:setFrame(screenFrame)
 end)
+
+---------------------------------------------------------
+-- MOUSE
+---------------------------------------------------------
+
+local function centerMouseOnRect(frame)
+  hs.mouse.setAbsolutePosition(geometry.rectMidPoint(frame))
+end
+
+local mouseCircle = nil
+local mouseCircleTimer = nil
+
+function mouseHighlight()
+  -- Delete an existing highlight if it exists
+  result(mouseCircle, "delete")
+  result(mouseCircleTimer, "stop")
+
+  -- Get the current co-ordinates of the mouse pointer
+  mousepoint = hs.mouse.get()
+
+  -- Prepare a big red circle around the mouse pointer
+  mouseCircle = hs.drawing.circle(hs.geometry.rect(mousepoint.x-40, mousepoint.y-40, 80, 80))
+  mouseCircle:setFillColor({["red"]=0,["blue"]=1,["green"]=0,["alpha"]=0.5})
+  mouseCircle:setStrokeWidth(0)
+  mouseCircle:show()
+
+  -- Set a timer to delete the circle after 3 seconds
+  mouseCircleTimer = hs.timer.doAfter(0.2, function()
+    mouseCircle:delete()
+  end)
+end
 
 ---------------------------------------------------------
 -- APPLICATION / WINDOW
@@ -66,8 +108,25 @@ function getApplicationWindow(applicationName)
   end
 end
 
-
+-- save mouse position
 applicationStates = {}
+
+-- Needed to cycle upon multiple presses
+lastToggledApplication = nil
+
+-- > getNextIndex({1,2,3}, 3)
+-- 1
+-- > getNextIndex({1}, 1)
+-- 1
+local function getNextIndex(table, currentIndex)
+  nextIndex = currentIndex + 1
+  if nextIndex > #table then
+    nextIndex = 1
+  end
+
+  dbg(string.format('next index %s', nextIndex))
+  return nextIndex
+end
 
 function launchOrFocus(name)
 
@@ -75,52 +134,107 @@ function launchOrFocus(name)
   -- * focusing an app
   -- * focusing an app, mouse over another app
 
-  -- TODO: should be a method on applicationStates
-  local saveCurrentState = function()
-
-    local window = hs.window.focusedWindow()
+  local getStateKey = function(window)
     local applicationName = compose(
-      getProperty("focusedWindow"),
       getProperty("application"),
       getProperty("title")
-    )(hs.window)
+    )(window)
 
-    applicationStates[applicationName] = {
-      ["screen"] = hs.mouse.getCurrentScreen(),
-      ["mouse"]  = hs.mouse.getRelativePosition(), -- mouse or nil
-      ["window"] =
-    }
-
-
-
-    local function saveApplicationState (applicationName)
-
-    end
-
-    compose(
-
-      saveApplicationState
-    )(hs.window)
+    return applicationName .. window:id()
   end
 
-  local lookupState = partial(result, applicationStates)
+  -- TODO: should be a method on applicationStates
+  local saveCurrentState = function()
+    local window = hs.window.focusedWindow()
+    local applicationStateKey = getStateKey(window)
 
-  local restoreState = function(applicationName)
+    applicationStates[applicationStateKey] = {
+      ["screen"] = hs.mouse.getCurrentScreen(),
+      ["mouse"]  = hs.mouse.getAbsolutePosition(), -- mouse or nil
+      ["window"] = window
+    }
+  end
+
+  local lookupState = function(window)
+    local key = getStateKey(window)
+    return applicationStates[key]
+  end
+
+  local restoreState = function(window)
+    local key = getStateKey(window)
+
     compose(
       partial(result, applicationStates),
       maybe(getProperty('mouse')),
-      maybe(hs.mouse.setAbsolutePosition)
-    )(applicationName)
+      -- even if the mouse goes outside the window, and that app is saved
+      -- make sure it appears within the window
+      maybe(function(mouseCoordinates)
+        local windowFrame = window:frame()
+
+        if geometry.isPointInRect(mouseCoordinates, windowFrame) then
+          hs.mouse.setAbsolutePosition(mouseCoordinates)
+        else
+          centerMouseOnFrame(windowFrame)
+        end
+      end)
+    )(key)
+  end
+
+  local getNextWindow = function(applicationName)
+    windows = hs.appfinder.appFromName(applicationName):allWindows()
+
+    -- since chrome has windows which are non-standard, and not
+    -- focusable
+    windows = filter(windows, hs.window.isStandard)
+    windows = filter(windows, hs.window.isVisible)
+
+    lastIndex = indexOf(windows, hs.window.focusedWindow())
+
+    dbgf('finding next window for appName: %s', applicationName)
+    dbgf('resolved last index to: %s', lastIndex)
+
+    dbg(windows[getNextIndex(windows, lastIndex)])
+
+    return windows[getNextIndex(windows, lastIndex)]
   end
 
   return function()
+    -- other things we could do:
+    -- when you change to another screen other than the main one
+
     -- save the state of currently focused app
     saveCurrentState()
 
+    local nextWindow = nil
+
+    lastToggledApplication = hs.window.focusedWindow():application():title()
+
+    dbgf('last: %s, current: %s', lastToggledApplication, name)
+
+    if lastToggledApplication == name then
+      nextWindow = getNextWindow(name)
+      nextWindow:becomeMain()
+    end
+
     -- try to restore previous state for app about to launch/focus
-    restoreState(name)
 
     hs.application.launchOrFocus(name)
+
+    local targetWindow = nil
+
+    if nextWindow then -- won't be available when appState empty
+      targetWindow = nextWindow
+    else
+      targetWindow = hs.window.focusedWindow()
+    end
+
+    if lookupState(targetWindow) then
+      dbgf('restoring state of: %s', targetWindow:application():title())
+      restoreState(targetWindow)
+    else
+      local windowFrame = targetWindow:frame()
+      centerMouseOnFrame(windowFrame)
+    end
 
     mouseHighlight()
   end
@@ -290,9 +404,4 @@ function listenForKeyToAssign(callback)
   eventObject:start()
 
   return eventObject
-end
-
-function listenForKeys(numberOfKeys, callback)
-
-
 end
