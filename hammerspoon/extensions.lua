@@ -74,18 +74,31 @@ function launchOrFocus(name)
   -- switching to an app, states:
   -- * focusing an app
   -- * focusing an app, mouse over another app
+
+  -- TODO: should be a method on applicationStates
   local saveCurrentState = function()
+
+    local window = hs.window.focusedWindow()
+    local applicationName = compose(
+      getProperty("focusedWindow"),
+      getProperty("application"),
+      getProperty("title")
+    )(hs.window)
+
+    applicationStates[applicationName] = {
+      ["screen"] = hs.mouse.getCurrentScreen(),
+      ["mouse"]  = hs.mouse.getRelativePosition(), -- mouse or nil
+      ["window"] =
+    }
+
+
+
     local function saveApplicationState (applicationName)
-      applicationStates[applicationName] = {
-        ["screen"] = hs.mouse.getCurrentScreen(),
-        ["mouse"] =  hs.mouse.getRelativePosition() -- mouse or nil
-      }
+
     end
 
     compose(
-      getProperty("focusedWindow"),
-      getProperty("application"),
-      getProperty("title"),
+
       saveApplicationState
     )(hs.window)
   end
