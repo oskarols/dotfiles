@@ -74,7 +74,7 @@ end)
 screenToRight = manipulateScreen(function(window, windowFrame, screen, screenFrame)
   windowFrame.w = screenFrame.w / 2
   windowFrame.x = (screenFrame.w / 2) + screenFrame.x
-  windowFrame.h = screenFrame.h
+  windowFrame.h = screenFrame.h + 10
 
   window:setFrame(windowFrame)
 end)
@@ -215,12 +215,13 @@ appStates = ApplicationWindowStates:new()
 -- Needed to enable cycling of application windows
 lastToggledApplication = ''
 
-function launchOrFocus(name)
+function launchOrCycleFocus(name)
   return function()
+    local nextWindow = nil
+    local targetWindow = nil
+
     -- save the state of currently focused app
     appStates:save()
-
-    local nextWindow = nil
 
     focusedWindow          = hs.window.focusedWindow()
     lastToggledApplication = focusedWindow:application():title()
@@ -247,9 +248,6 @@ function launchOrFocus(name)
     else
       hs.application.launchOrFocus(name)
     end
-
-
-    local targetWindow = nil
 
     if nextWindow then -- won't be available when appState empty
       targetWindow = nextWindow
@@ -309,7 +307,7 @@ function setCustomizedGrid(grid)
   grid.GRIDHEIGHT = gridHeight
   grid.GRIDWIDTH  = gridWidth
 
-  subGrid = grid
+  customizedGrid = grid
 end
 
 

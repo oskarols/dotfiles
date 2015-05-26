@@ -1,5 +1,3 @@
-flair = "ᕙ(⇀‸↼‶)ᕗ";
-
 hyper = {"cmd", "ctrl", "alt", "shift"}
 
 -- disable animations
@@ -24,35 +22,10 @@ require "fntools"
 require "extensions"
 require "window_tracker"
 
--- TODOS
 
--- if switching from a non-bound app to an explicitly bound one
--- there should be a key to switch back
-
--- security policy based on the wifi ID connected to,
--- i.e. locks
--- maybe base this on the location somehow via GPS?
-
--- need some bridge between browser and database or notes of URIs
--- similar to PathFinder
-
--- have some sort of bookmark application separate from chrome and firefox (perhaps that's evernote?)
-
--- modal if there are multiple windows, else just normal hotkey
-
--- holding a focus button for a longer period will upon release refocus
--- the previous application
-
--- you should be able to indicate size changes using two keys to judge
--- the distance between those keys
--- e.g. E -> T would increase cell size by two to the right
-
--- hyper + C / V should save a specific window + application, not just app
-
--- extend the objects with .get('propertyName', {default: Primitive || Function})
--- like so: :get('focusedWindow'):get('application'):get('title')
--- would also have good exceptions, be able to say things like
--- you tried getting the focusedWindow on object <application>
+---------------------------------------------------------
+-- SCREENS
+---------------------------------------------------------
 
 local cycleScreens = hs.fnutils.cycle(hs.screen.allScreens())
 
@@ -60,44 +33,52 @@ hs.hotkey.bind(hyper, "S", function()
   hs.window.focusedWindow():moveToScreen(cycleScreens())
 end)
 
-screenOrder = {
-    "Color LCD"
-}
+-- screenOrder = {
+--     "Color LCD"
+-- }
 
-screenMoveMode = hs.hotkey.modal.new(hyper, "s")
-function screenMoveMode:entered()
-  hs.alert.show('Mode: Move to screen', 10)
+-- screenMoveMode = hs.hotkey.modal.new(hyper, "s")
+-- function screenMoveMode:entered()
+--   hs.alert.show('Mode: Move to screen', 10)
 
-  -- main display = 1
-  -- screen to
+--   -- main display = 1
+--   -- screen to
 
-  manualScreenOrder = {
-      [69677504] = 1 -- Macbook display
-  }
-  screenMappings = {}
-  allScreens = hs.screen.allScreens()
+--   manualScreenOrder = {
+--       [69677504] = 1 -- Macbook display
+--   }
+--   screenMappings = {}
+--   allScreens = hs.screen.allScreens()
 
-  for i, screen in pairs(allScreens) do
-    local id = screen:id()
-    local name = screen:name()
+--   for i, screen in pairs(allScreens) do
+--     local id = screen:id()
+--     local name = screen:name()
 
-    hs.alert(string.format('display: %s real ID: %s', name, id), 10)
-  end
-end
+--     hs.alert(string.format('display: %s real ID: %s', name, id), 10)
+--   end
+-- end
 
-hs.hotkey.bind(hyper, "1", launchOrFocus("Sublime Text"))
-hs.hotkey.bind(hyper, "2", launchOrFocus("iTerm"))
-hs.hotkey.bind(hyper, "3", launchOrFocus("Google Chrome"))
-hs.hotkey.bind(hyper, "4", launchOrFocus("Firefox"))
-hs.hotkey.bind(hyper, "5", launchOrFocus("Evernote"))
-hs.hotkey.bind(hyper, "6", launchOrFocus("Spotify"))
-hs.hotkey.bind(hyper, "7", launchOrFocus("Vox"))
+---------------------------------------------------------
+-- APP HOTKEYS
+---------------------------------------------------------
 
-hs.hotkey.bind(hyper, "Z", launchOrFocus("Finder"))
+hs.hotkey.bind(hyper, "1", launchOrCycleFocus("Sublime Text"))
+hs.hotkey.bind(hyper, "2", launchOrCycleFocus("iTerm"))
+hs.hotkey.bind(hyper, "3", launchOrCycleFocus("Google Chrome"))
+hs.hotkey.bind(hyper, "4", launchOrCycleFocus("Firefox"))
+hs.hotkey.bind(hyper, "5", launchOrCycleFocus("Evernote"))
+hs.hotkey.bind(hyper, "6", launchOrCycleFocus("Spotify"))
+hs.hotkey.bind(hyper, "7", launchOrCycleFocus("Vox"))
+
+hs.hotkey.bind(hyper, "Z", launchOrCycleFocus("Finder"))
 
 hs.hotkey.bind(hyper, "F", fullScreenCurrent)
 hs.hotkey.bind(hyper, "D", screenToRight)
 hs.hotkey.bind(hyper, "A", screenToLeft)
+
+---------------------------------------------------------
+-- KEYBOARD LANGUAGE SWITCH
+---------------------------------------------------------
 
 local getLanguage = hs.fnutils.cycle({
   "Swedish - Pro",
@@ -122,6 +103,10 @@ hs.hotkey.bind(hyper, "L", function()
   hs.applescript.applescript(script:format(language))
 end)
 
+---------------------------------------------------------
+-- ON-THE-FLY KEYBIND
+---------------------------------------------------------
+
 -- Temporarily bind an application to be toggled by the V key
 -- useful for once-in-a-while applications like Preview
 boundApplication = nil
@@ -143,80 +128,9 @@ hs.hotkey.bind(hyper, "C", function()
   hs.alert(string.format("Binding: %s", appName))
 end)
 
-
-hs.hotkey.bind(hyper, "I", function()
-  local currentlyFocusedWindow = hs.window.focusedWindow()
-  local vox = getApplicationWindow('VOX')
-  local voxapp = vox:application()
-  vox:focus()
-
-  voxapp:selectMenuItem({"Controls", "Go to Current Track"})
-  vox:selectMenuItem({"Edit", "Delete and Move to Trash"})
-
-  -- Have to use long timeout, else doesn't enable the
-  -- menu items .. :(
-  hs.timer.doAfter(1, function()
-    voxapp:selectMenuItem({"Controls", "Play"})
-    currentlyFocusedWindow:focus()
-  end)
-end)
-
-function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
-
-screenGrid = hs.hotkey.modal.new(hyper, "T")
-
-screenGrid:bind({}, 'escape', function()
-  screenGrid:exit()
-  alert('Exited screenGrid')
-end)
-
-function screenGrid:entered()
-  alert(string.format('Entered Grid Configuration Mode'))
-
-  local function describeGrid()
-
-    local topCoord =    gridCoordinates(topLeftGrid)
-    local bottomCoord = gridCoordinates(bottomRightGrid)
-
-    newGrid = subGrid(gridKeys, topCoord, bottomCoord)
-
-    setCustomizedGrid(newGrid)
-  end
-
-   a = listenForKeyToAssign(function(char)
-    topLeftGrid = char
-
-    b = listenForKeyToAssign(function(char)
-      bottomRightGrid = char
-
-      describeGrid()
-    end)
-  end)
-end
-
-hs.hotkey.bind(hyper, "X", function()
-  hs.openConsole()
-  hs.focus()
-end)
-
-hs.hotkey.bind(hyper, "K", function()
-  hs.hints.windowHints()
-end)
-
-hs.hotkey.bind(hyper, "H", function()
-  local current = hs.application.frontmostApplication()
-  current:selectMenuItem({"Help"})
-end)
-
-hs.hotkey.bind(hyper, "R", function()
-  hs.reload()
-  hs.alert.show("Config loaded")
-end)
-
-hs.hotkey.bind(hyper, "Q", function()
-  window = hs.window.focusedWindow()
-  hs.grid.snap(window)
-end)
+---------------------------------------------------------
+-- EVERNOTE
+---------------------------------------------------------
 
 evernote = hs.hotkey.modal.new(hyper, "E")
 
@@ -240,3 +154,89 @@ evernote:bind({}, 'N', function()
   hs.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
   evernoteExit()
 end)
+
+---------------------------------------------------------
+-- VOX
+---------------------------------------------------------
+
+hs.hotkey.bind(hyper, "I", function()
+  local currentlyFocusedWindow = hs.window.focusedWindow()
+  local vox = getApplicationWindow('VOX')
+  local voxapp = vox:application()
+  vox:focus()
+
+  voxapp:selectMenuItem({"Controls", "Go to Current Track"})
+  vox:selectMenuItem({"Edit", "Delete and Move to Trash"})
+
+  -- Have to use long timeout, else doesn't enable the
+  -- menu items .. :(
+  hs.timer.doAfter(1, function()
+    voxapp:selectMenuItem({"Controls", "Play"})
+    currentlyFocusedWindow:focus()
+  end)
+end)
+
+---------------------------------------------------------
+-- KEY GRID
+---------------------------------------------------------
+
+function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
+
+screenGrid = hs.hotkey.modal.new(hyper, "T")
+
+screenGrid:bind({}, 'escape', function()
+  screenGrid:exit()
+  alert('Exited screenGrid')
+end)
+
+function screenGrid:entered()
+  alert(string.format('Entered Grid Configuration Mode'))
+
+  local function describeGrid()
+
+    local topCoord =    gridCoordinates(topLeftGrid)
+    local bottomCoord = gridCoordinates(bottomRightGrid)
+
+    local gridCopy = deepcopy(gridKeys)
+
+    newGrid = subGrid(gridCopy, topCoord, bottomCoord)
+
+    setCustomizedGrid(newGrid)
+  end
+
+   a = listenForKeyToAssign(function(char)
+    topLeftGrid = char
+
+    b = listenForKeyToAssign(function(char)
+      bottomRightGrid = char
+
+      describeGrid()
+    end)
+  end)
+end
+
+
+hs.hotkey.bind(hyper, "K", function()
+  hs.hints.windowHints()
+end)
+
+hs.hotkey.bind(hyper, "H", function()
+  local current = hs.application.frontmostApplication()
+  current:selectMenuItem({"Help"})
+end)
+
+hs.hotkey.bind(hyper, "X", function()
+  hs.openConsole()
+  hs.focus()
+end)
+
+hs.hotkey.bind(hyper, "R", function()
+  hs.reload()
+  hs.alert.show("Config loaded")
+end)
+
+hs.hotkey.bind(hyper, "Q", function()
+  window = hs.window.focusedWindow()
+  hs.grid.snap(window)
+end)
+
