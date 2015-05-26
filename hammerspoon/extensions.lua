@@ -7,6 +7,8 @@ local fnutils = require "hs.fnutils"
 local partial = fnutils.partial
 local indexOf = fnutils.indexOf
 local filter = fnutils.filter
+local concat = fnutils.concat
+local contains = fnutils.contains
 
 local window = require "hs.window"
 local alert = require "hs.alert"
@@ -237,8 +239,9 @@ function launchOrCycleFocus(name)
       --
       -- If we have two applications, each with multiple windows
       -- i.e:
+      --
       -- Google Chrome: {window1} {window2}
-      -- Firefox: {window1} {window2} {window3}
+      -- Firefox:       {window1} {window2} {window3}
       --
       -- and we want to move between Google Chrome {window2} and Firefox {window3}
       -- when pressing the hotkeys for those applications, then using becomeMain
@@ -288,28 +291,76 @@ gridKeys = {
   {"z", "x", "c", "v", "b", "n", "m"}
 }
 
-local allGridKeys = flatten(gridKeys)
-
 function isValidGridKey(char)
   return indexOf(allGridKeys, char)
 end
 
 customizedGrid = nil
 
-function setCustomizedGrid(grid)
-  local gridHeight = #newGrid
-  local gridWidth  = #newGrid[1]
+function createGrid(callback)
 
-  print(string.format("Grid width: %s, height %s", #newGrid[1], #newGrid))
+  function gridFromCoordinates(topLeftGrid, bottomRightGrid)
+    local topCoord =    gridCoordinates(topLeftGrid)
+    local bottomCoord = gridCoordinates(bottomRightGrid)
+    local gridCopy =    deepcopy(gridKeys)
+    local newGrid =     subGrid(gridCopy, topCoord, bottomCoord)
 
-  dbg(newGrid)
+    dbg(topCoord)
+    dbg(bottomCoord)
 
-  grid.GRIDHEIGHT = gridHeight
-  grid.GRIDWIDTH  = gridWidth
+    dbg(newGrid)
+    dbgf("Grid width: %s, height %s", #newGrid[1], #newGrid)
 
-  customizedGrid = grid
+    customizedGrid = newGrid
+
+    local gridHeight = #newGrid
+    local gridWidth  = #newGrid[1]
+    grid.GRIDHEIGHT = gridHeight
+    grid.GRIDWIDTH  = gridWidth
+
+    callback()
+  end
+
+  local allGridKeys = flatten(gridKeys)
+
+  captureKeys(2, gridFromCoordinates, partial(contains, allGridKeys))
 end
 
+function resizeGridWithCell(callback)
+  if not customizedGrid then
+    callback()
+    return
+  end
+
+  -- since hs.grid uses 0 based indeces ..
+  local function HSGridCellAdapter(cell)
+    cell.x = cell.x - 1
+    cell.y = cell.y - 1
+    return cell
+  end
+
+  function manipulateWindow(topLeftGrid, bottomRightGrid)
+    local topCoord = getCoordinates(customizedGrid, topLeftGrid)
+    local bottomCoord = getCoordinates(customizedGrid, bottomRightGrid)
+    local window = hs.window.focusedWindow()
+    local gridCell = subGrid(deepcopy(customizedGrid), topCoord, bottomCoord)
+    local cell = {
+      x = topCoord.x,
+      y = topCoord.y,
+      h = #gridCell,
+      w = #gridCell[1]
+    }
+
+    cell = HSGridCellAdapter(cell)
+    hs.grid.set(window, cell, window:screen())
+
+    callback()
+  end
+
+  local allValidKeys = flatten(customizedGrid)
+
+  captureKeys(2, manipulateWindow, partial(contains, allValidKeys))
+end
 
 -- grid = {
 --   {1, 2, 3},
@@ -348,17 +399,21 @@ function getCoordinates(table, value)
   }
 end
 
+function drawgrid(grid, cells)
+
+end
+
 gridCoordinates = partial(getCoordinates, gridKeys)
 
 -- Extract a subset of a grid using coordinates
 --
 -- grid = {
---   {1, 2, 3, 4, 5}
---   {6, 7, 8, 9, 4}
+--   {1, 2, 3, 4, 5},
+--   {6, 7, 8, 9, 4},
 --   {9, 8, 8, 7, 6}
 -- }
 --
--- > subGrid(grid, {x = 2, y = 2}, {x = 3, y = 3})
+-- > subGrid(grid, {x = 2, y = 1}, {x = 3, y = 3})
 -- {
 --   {2, 3}
 --   {7, 8}
@@ -443,4 +498,46 @@ function listenForKeyToAssign(callback)
   eventObject:start()
 
   return eventObject
+end
+
+
+
+--captureKeys(1, function(firstKey) end)
+--captureKeys(2, function(firstKey, secondKey) end)
+function captureKeys(numberOfKeystrokes, callback, keyValidator)
+  local events = {
+    hs.eventtap.event.types.keydown
+  }
+  local capturedKeys = {}
+  local currentWatcher = nil
+
+  function captureKeystroke()
+    local watcher = hs.eventtap.new(events, keystrokeHandler)
+    watcher:start()
+    currentWatcher = watcher
+    return watcher
+  end
+
+  function keystrokeHandler(event, foo, bar)
+    currentWatcher:stop()
+
+    local char = eventToCharacter(event)
+    hs.alert('received '..char)
+
+    if isFunction(keyValidator) and not keyValidator(char) then
+      return true
+    end
+
+    table.insert(capturedKeys, char)
+
+    if #capturedKeys < numberOfKeystrokes then
+      captureKeystroke()
+    else
+      callback(table.unpack(capturedKeys))
+    end
+
+    return true
+  end
+
+  captureKeystroke()
 end

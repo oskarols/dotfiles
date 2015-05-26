@@ -126,6 +126,42 @@ hs.hotkey.bind(hyper, "C", function()
 end)
 
 ---------------------------------------------------------
+-- KEYBOARD WINDOW MANIPULATION GRID
+---------------------------------------------------------
+
+-- # DEFINE A NEW GRID
+
+local createNewGrid = hs.hotkey.modal.new(hyper, "W")
+
+function createNewGridExit()
+  createNewGrid:exit()
+  alert('Exited screenGrid')
+end
+
+createNewGrid:bind({}, 'escape', createNewGridExit)
+
+function createNewGrid:entered()
+  alert(string.format('Entered Grid Configuration Mode'))
+  createGrid(createNewGridExit)
+end
+
+-- # RESIZE
+
+local resizeWithCell = hs.hotkey.modal.new(hyper, "Q")
+
+function resizeWithCellExit()
+  resizeWithCell:exit()
+  alert('Exited resizeWithCell')
+end
+createNewGrid:bind({}, 'escape', resizeWithCellExit)
+
+function resizeWithCell:entered()
+  alert(string.format('Entered Grid Resize Mode'))
+  resizeGridWithCell(resizeWithCellExit)
+end
+
+
+---------------------------------------------------------
 -- EVERNOTE
 ---------------------------------------------------------
 
@@ -174,30 +210,8 @@ hs.hotkey.bind(hyper, "I", function()
 end)
 
 ---------------------------------------------------------
--- KEY GRID
+-- MISC
 ---------------------------------------------------------
-
-local screenGrid = hs.hotkey.modal.new(hyper, "T")
-
-screenGrid:bind({}, 'escape', function()
-  screenGrid:exit()
-  alert('Exited screenGrid')
-end)
-
-function screenGrid:entered()
-  alert(string.format('Entered Grid Configuration Mode'))
-
-   a = listenForKeyToAssign(function(char)
-    topLeftGrid = char
-
-    b = listenForKeyToAssign(function(char)
-      bottomRightGrid = char
-
-      describeGrid()
-    end)
-  end)
-end
-
 
 hs.hotkey.bind(hyper, "K", function()
   hs.hints.windowHints()
@@ -216,9 +230,4 @@ end)
 hs.hotkey.bind(hyper, "R", function()
   hs.reload()
   hs.alert.show("Config loaded")
-end)
-
-hs.hotkey.bind(hyper, "Q", function()
-  window = hs.window.focusedWindow()
-  hs.grid.snap(window)
 end)
