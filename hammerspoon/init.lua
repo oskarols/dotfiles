@@ -116,7 +116,7 @@ hs.hotkey.bind(hyper, "C", function()
   end
   hs.alert(appName)
 
-  boundApplication = hs.hotkey.bind(hyper, "V", launchOrFocus(appName))
+  boundApplication = hs.hotkey.bind(hyper, "V", launchOrCycleFocus(appName))
 
   -- https://github.com/Hammerspoon/hammerspoon/issues/184#issuecomment-102835860
   boundApplication:disable()
@@ -187,18 +187,6 @@ end)
 function screenGrid:entered()
   alert(string.format('Entered Grid Configuration Mode'))
 
-  local function describeGrid()
-
-    local topCoord =    gridCoordinates(topLeftGrid)
-    local bottomCoord = gridCoordinates(bottomRightGrid)
-
-    local gridCopy = deepcopy(gridKeys)
-
-    newGrid = subGrid(gridCopy, topCoord, bottomCoord)
-
-    setCustomizedGrid(newGrid)
-  end
-
    a = listenForKeyToAssign(function(char)
     topLeftGrid = char
 
@@ -234,4 +222,3 @@ hs.hotkey.bind(hyper, "Q", function()
   window = hs.window.focusedWindow()
   hs.grid.snap(window)
 end)
-
