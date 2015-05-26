@@ -6,9 +6,6 @@ hs.window.animationDuration = 0
 -- hide window shadows
 hs.window.setShadows(false)
 
-partial = hs.fnutils.partial
-sequence = hs.fnutils.sequence
-
 local fnutils = require "hs.fnutils"
 local partial = fnutils.partial
 local indexOf = fnutils.indexOf
@@ -20,8 +17,6 @@ local grid = require "hs.grid"
 
 require "fntools"
 require "extensions"
-require "window_tracker"
-
 
 ---------------------------------------------------------
 -- SCREENS
