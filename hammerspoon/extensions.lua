@@ -13,21 +13,34 @@ local alert = require "hs.alert"
 local grid = require "hs.grid"
 local geometry = require "hs.geometry"
 
+---------------------------------------------------------
+-- Debugging
+---------------------------------------------------------
+
+dbg = function(...)
+  print(hs.inspect(...))
+end
 
 dbgf = function (...)
   return dbg(string.format(...))
+end
+
+function tap (a)
+  dbg(a)
+  return a
 end
 
 ---------------------------------------------------------
 -- COORDINATES, POINTS, RECTS, FRAMES, TABLES
 ---------------------------------------------------------
 
+-- Fetch next index but cycle back when at the end
+--
 -- > getNextIndex({1,2,3}, 3)
 -- 1
 -- > getNextIndex({1}, 1)
 -- 1
---
--- Note: Nice to have to cycle back to beginning
+-- @return int
 local function getNextIndex(table, currentIndex)
   nextIndex = currentIndex + 1
   if nextIndex > #table then
@@ -40,7 +53,6 @@ end
 ---------------------------------------------------------
 -- SCREEN
 ---------------------------------------------------------
-
 
 -- NOTE, Screens use relative coordinates, all the screens
 -- make up a big screen, so you have do adjust accordingly
@@ -107,20 +119,20 @@ end
 -- APPLICATION / WINDOW
 ---------------------------------------------------------
 
-local function getNextWindow(applicationName)
-  windows = hs.appfinder.appFromName(applicationName):allWindows()
+-- Returns the next successive window given a collection of windows
+-- and a current selected window
+--
+-- @param  windows  list of hs.window or applicationName
+-- @param  window   instance of hs.window
+-- @return hs.window
+local function getNextWindow(windows, window)
+  if type(windows) == "string" then
+    windows = hs.appfinder.appFromName(windows):allWindows()
+  end
 
-  -- since chrome has windows which are non-standard, and not
-  -- focusable
   windows = filter(windows, hs.window.isStandard)
   windows = filter(windows, hs.window.isVisible)
-
-  lastIndex = indexOf(windows, hs.window.focusedWindow())
-
-  dbgf('finding next window for appName: %s', applicationName)
-  dbgf('resolved last index to: %s', lastIndex)
-
-  dbg(windows[getNextIndex(windows, lastIndex)])
+  lastIndex = indexOf(windows, window)
 
   return windows[getNextIndex(windows, lastIndex)]
 end
@@ -140,19 +152,18 @@ function getApplicationWindow(applicationName)
   end
 end
 
--- save mouse position
+-- Captured snapshots of an application windows state
+-- used to save and restore snapshots when moving
+-- between applications
 applicationStates = {}
 
--- Needed to cycle upon multiple presses
-lastToggledApplication = nil
+-- Needed to enable cycling of application windows
+lastToggledApplication = ''
 
 function launchOrFocus(name)
 
-  -- switching to an app, states:
-  -- * focusing an app
-  -- * focusing an app, mouse over another app
-
   local getStateKey = function(window)
+    if not window then return '' end
     local applicationName = compose(
       getProperty("application"),
       getProperty("title")
@@ -199,24 +210,20 @@ function launchOrFocus(name)
   end
 
   return function()
-    -- other things we could do:
-    -- when you change to another screen other than the main one
-
     -- save the state of currently focused app
     saveCurrentState()
 
     local nextWindow = nil
 
-    lastToggledApplication = hs.window.focusedWindow():application():title()
+    focusedWindow = hs.window.focusedWindow()
+    lastToggledApplication = focusedWindow:application():title()
 
     dbgf('last: %s, current: %s', lastToggledApplication, name)
 
     if lastToggledApplication == name then
-      nextWindow = getNextWindow(name)
+      nextWindow = getNextWindow(name, focusedWindow)
       nextWindow:becomeMain()
     end
-
-    -- try to restore previous state for app about to launch/focus
 
     hs.application.launchOrFocus(name)
 
@@ -295,7 +302,6 @@ end
 --
 -- > getCoordinates(grid, 4)
 -- { x = 1, y = 2}
-
 function getCoordinates(table, value)
   local x
   local y
@@ -380,8 +386,10 @@ end
 -- KEYBOARD / MOUSE
 ---------------------------------------------------------
 
-
-eventToCharacter = compose(
+-- Returns what key was pressed on an eventtap object
+-- @param   event   the parameter for eventtap callbacks
+-- @return  string
+local eventToCharacter = compose(
   getProperty('getKeyCode'),
   partial(result, hs.keycodes.map),
   partial(flip(invoke), 'lower')
