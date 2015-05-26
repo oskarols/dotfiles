@@ -155,63 +155,68 @@ end
 -- Captured snapshots of an application windows state
 -- used to save and restore snapshots when moving
 -- between applications
-applicationStates = {}
+ApplicationWindowStates = {}
 
+function ApplicationWindowStates:new()
+  self.__index = self
+  return setmetatable({}, self)
+end
+
+function ApplicationWindowStates:key(window)
+  if not window then return '' end
+  local applicationName = compose(
+    getProperty("application"),
+    getProperty("title")
+  )(window)
+
+  return applicationName..':'..window:id()
+end
+
+function ApplicationWindowStates:save()
+  local window = hs.window.focusedWindow()
+  local applicationStateKey = self.key(window)
+
+  self[applicationStateKey] = {
+    ["screen"] = hs.mouse.getCurrentScreen(),
+    ["mouse"]  = hs.mouse.getAbsolutePosition(), -- mouse or nil
+    ["window"] = window
+  }
+end
+
+function ApplicationWindowStates:lookup(window)
+  local key = self.key(window)
+  return self[key]
+end
+
+function ApplicationWindowStates:restore(window)
+  local key = self.key(window)
+
+  compose(
+    partial(result, self),
+    maybe(getProperty('mouse')),
+    -- even if the mouse goes outside the window, and that app is saved
+    -- make sure it appears within the window
+    maybe(function(mouseCoordinates)
+      local windowFrame = window:frame()
+
+      if geometry.isPointInRect(mouseCoordinates, windowFrame) then
+        hs.mouse.setAbsolutePosition(mouseCoordinates)
+      else
+        centerMouseOnRect(windowFrame)
+      end
+    end)
+  )(key)
+end
+
+
+appStates = ApplicationWindowStates:new()
 -- Needed to enable cycling of application windows
 lastToggledApplication = ''
 
 function launchOrFocus(name)
-
-  local getStateKey = function(window)
-    if not window then return '' end
-    local applicationName = compose(
-      getProperty("application"),
-      getProperty("title")
-    )(window)
-
-    return applicationName .. window:id()
-  end
-
-  -- TODO: should be a method on applicationStates
-  local saveCurrentState = function()
-    local window = hs.window.focusedWindow()
-    local applicationStateKey = getStateKey(window)
-
-    applicationStates[applicationStateKey] = {
-      ["screen"] = hs.mouse.getCurrentScreen(),
-      ["mouse"]  = hs.mouse.getAbsolutePosition(), -- mouse or nil
-      ["window"] = window
-    }
-  end
-
-  local lookupState = function(window)
-    local key = getStateKey(window)
-    return applicationStates[key]
-  end
-
-  local restoreState = function(window)
-    local key = getStateKey(window)
-
-    compose(
-      partial(result, applicationStates),
-      maybe(getProperty('mouse')),
-      -- even if the mouse goes outside the window, and that app is saved
-      -- make sure it appears within the window
-      maybe(function(mouseCoordinates)
-        local windowFrame = window:frame()
-
-        if geometry.isPointInRect(mouseCoordinates, windowFrame) then
-          hs.mouse.setAbsolutePosition(mouseCoordinates)
-        else
-          centerMouseOnRect(windowFrame)
-        end
-      end)
-    )(key)
-  end
-
   return function()
     -- save the state of currently focused app
-    saveCurrentState()
+    appStates:save()
 
     local nextWindow = nil
 
@@ -222,6 +227,9 @@ function launchOrFocus(name)
 
     if lastToggledApplication == name then
       nextWindow = getNextWindow(name, focusedWindow)
+
+      -- super important, else launchOrFocus won't cycle between
+      -- windows
       nextWindow:becomeMain()
     end
 
@@ -235,9 +243,9 @@ function launchOrFocus(name)
       targetWindow = hs.window.focusedWindow()
     end
 
-    if lookupState(targetWindow) then
+    if appStates:lookup(targetWindow) then
       dbgf('restoring state of: %s', targetWindow:application():title())
-      restoreState(targetWindow)
+      appStates:restore(targetWindow)
     else
       local windowFrame = targetWindow:frame()
       centerMouseOnRect(windowFrame)
