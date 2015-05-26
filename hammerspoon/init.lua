@@ -1,4 +1,4 @@
-hyper = {"cmd", "ctrl", "alt", "shift"}
+local hyper = {"cmd", "ctrl", "alt", "shift"}
 
 -- disable animations
 hs.window.animationDuration = 0
@@ -53,6 +53,8 @@ end)
 --   end
 -- end
 
+-- function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
+
 ---------------------------------------------------------
 -- APP HOTKEYS
 ---------------------------------------------------------
@@ -104,10 +106,10 @@ end)
 
 -- Temporarily bind an application to be toggled by the V key
 -- useful for once-in-a-while applications like Preview
-boundApplication = nil
+local boundApplication = nil
 
 hs.hotkey.bind(hyper, "C", function()
-  appName = hs.window.focusedWindow():application():title()
+  local appName = hs.window.focusedWindow():application():title()
 
   if boundApplication then
     boundApplication:disable()
@@ -127,7 +129,7 @@ end)
 -- EVERNOTE
 ---------------------------------------------------------
 
-evernote = hs.hotkey.modal.new(hyper, "E")
+local evernote = hs.hotkey.modal.new(hyper, "E")
 
 function evernote:entered()
   alert('Evernote Modal')
@@ -175,9 +177,7 @@ end)
 -- KEY GRID
 ---------------------------------------------------------
 
-function screenMoveMode:exited()  hs.alert.show('Exited mode')  end
-
-screenGrid = hs.hotkey.modal.new(hyper, "T")
+local screenGrid = hs.hotkey.modal.new(hyper, "T")
 
 screenGrid:bind({}, 'escape', function()
   screenGrid:exit()
