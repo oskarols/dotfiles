@@ -155,6 +155,7 @@ end
 -- Captured snapshots of an application windows state
 -- used to save and restore snapshots when moving
 -- between applications
+
 ApplicationWindowStates = {}
 
 function ApplicationWindowStates:new()
@@ -210,6 +211,7 @@ end
 
 
 appStates = ApplicationWindowStates:new()
+
 -- Needed to enable cycling of application windows
 lastToggledApplication = ''
 
@@ -220,7 +222,7 @@ function launchOrFocus(name)
 
     local nextWindow = nil
 
-    focusedWindow = hs.window.focusedWindow()
+    focusedWindow          = hs.window.focusedWindow()
     lastToggledApplication = focusedWindow:application():title()
 
     dbgf('last: %s, current: %s', lastToggledApplication, name)
@@ -228,12 +230,24 @@ function launchOrFocus(name)
     if lastToggledApplication == name then
       nextWindow = getNextWindow(name, focusedWindow)
 
-      -- super important, else launchOrFocus won't cycle between
-      -- windows
+      -- Becoming main means
+      -- * gain focus (although docs say differently?)
+      -- * next call to launchOrFocus will focus the main window <- important
+      --
+      -- If we have two applications, each with multiple windows
+      -- i.e:
+      -- Google Chrome: {window1} {window2}
+      -- Firefox: {window1} {window2} {window3}
+      --
+      -- and we want to move between Google Chrome {window2} and Firefox {window3}
+      -- when pressing the hotkeys for those applications, then using becomeMain
+      -- we cycle until those windows (i.e press hotkey twice for Chrome) have focus
+      -- and then the launchOrFocus will trigger that specific window.
       nextWindow:becomeMain()
+    else
+      hs.application.launchOrFocus(name)
     end
 
-    hs.application.launchOrFocus(name)
 
     local targetWindow = nil
 

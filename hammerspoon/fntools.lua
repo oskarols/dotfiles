@@ -102,20 +102,3 @@ function deepcopy(orig)
     end
     return copy
 end
-
----------------------------------------------------------
--- Debugging
----------------------------------------------------------
-
-function tap (a)
-  dbg(a)
-  return a
-end
-
-dbg = function(...)
-  print(hs.inspect(...))
-end
-
-dbgf = function (...)
-  return dbg(string.format(...))
-end
