@@ -126,7 +126,7 @@ hs.hotkey.bind(hyper, "C", function()
 end)
 
 ---------------------------------------------------------
--- KEYBOARD WINDOW MANIPULATION GRID
+-- KEYBOARD-GRID WINDOW MANIPULATION
 ---------------------------------------------------------
 
 -- # DEFINE A NEW GRID
@@ -142,7 +142,14 @@ createNewGrid:bind({}, 'escape', createNewGridExit)
 
 function createNewGrid:entered()
   alert(string.format('Entered Grid Configuration Mode'))
-  createGrid(createNewGridExit)
+  hideGridfn = drawGrid()
+
+  local function hideGridAndExit()
+    if hideGridfn then hideGridfn() end
+    createNewGridExit()
+  end
+
+  newKeyboardGrid(hideGridAndExit)
 end
 
 -- # RESIZE
@@ -165,15 +172,25 @@ end
 -- EVERNOTE
 ---------------------------------------------------------
 
+mode = {}
+
+mode.enter = function()
+
+end
+
+mode.exit = function()
+
+end
+
 local evernote = hs.hotkey.modal.new(hyper, "E")
 
 function evernote:entered()
-  alert('Evernote Modal')
+  mode.enter("evernote")
 end
 
 local function evernoteExit()
   evernote:exit()
-  alert('Exited Evernote Modal')
+  mode.exit("evernote")
 end
 
 evernote:bind({}, 'escape', evernoteExit)

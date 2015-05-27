@@ -4,6 +4,8 @@ partial = hs.fnutils.partial
 sequence = hs.fnutils.sequence
 
 local fnutils = require "hs.fnutils"
+local map = fnutils.map
+local each = fnutils.each
 local partial = fnutils.partial
 local indexOf = fnutils.indexOf
 local filter = fnutils.filter
@@ -31,6 +33,10 @@ function tap (a)
   dbg(a)
   return a
 end
+
+local yay = "ᕙ(⇀‸↼‶)ᕗ"
+
+local boo = "ლ(ಠ益ಠლ)"
 
 ---------------------------------------------------------
 -- COORDINATES, POINTS, RECTS, FRAMES, TABLES
@@ -221,12 +227,13 @@ function launchOrCycleFocus(name)
   return function()
     local nextWindow = nil
     local targetWindow = nil
+    local focusedWindow          = hs.window.focusedWindow()
+    local lastToggledApplication = focusedWindow and focusedWindow:application():title()
+
+    if not focusedWindow then return nil end
 
     -- save the state of currently focused app
     appStates:save()
-
-    focusedWindow          = hs.window.focusedWindow()
-    lastToggledApplication = focusedWindow:application():title()
 
     dbgf('last: %s, current: %s', lastToggledApplication, name)
 
@@ -291,13 +298,9 @@ gridKeys = {
   {"z", "x", "c", "v", "b", "n", "m"}
 }
 
-function isValidGridKey(char)
-  return indexOf(allGridKeys, char)
-end
-
 customizedGrid = nil
 
-function createGrid(callback)
+function newKeyboardGrid(callback)
 
   function gridFromCoordinates(topLeftGrid, bottomRightGrid)
     local topCoord =    gridCoordinates(topLeftGrid)
@@ -326,8 +329,82 @@ function createGrid(callback)
   captureKeys(2, gridFromCoordinates, partial(contains, allGridKeys))
 end
 
+function drawGrid()
+  if not customizedGrid then
+    return nil
+  end
+
+  alert('drawing grid')
+
+  local grid = customizedGrid
+  local cells = {}
+
+  for i = 1, #grid do
+    for j = 1, #grid[i] do
+      table.insert(cells, {
+        y = i,
+        x = j,
+        char = grid[i][j]
+      })
+    end
+  end
+
+  local rectWidth = 60
+  local rectHeight = 60
+  local margin = 10
+  local roundedRadius = 10
+  local shapes = {}
+
+  local rects = each(cells, function(cellData)
+    local rect = {
+      x = (cellData.x * rectWidth) + (margin * cellData.x),
+      y = (cellData.y * rectHeight) + (margin * cellData.y),
+      w = rectWidth,
+      h = rectHeight
+    }
+    local rectangle = hs.drawing.rectangle(rect)
+
+    rectangle:setRoundedRectRadii(roundedRadius, roundedRadius)
+    rectangle:setFillColor({
+      red = 0.5,
+      blue = 0.5,
+      green = 0.5,
+      alpha = 1
+    })
+    rectangle:setStrokeColor({
+      red = 1,
+      blue = 1,
+      green = 1,
+      alpha = 1
+    })
+    rectangle:setStrokeWidth(5)
+    rectangle:show()
+
+    rect.x = rect.x + 10
+    rect.y = rect.y + 10
+
+    local text = hs.drawing.text(rect, cellData.char:upper())
+    text:show()
+    text:setTextSize(35)
+    text:bringToFront()
+
+    table.insert(shapes, rectangle)
+    table.insert(shapes, text)
+  end)
+
+  function hideShapes()
+    dbg(shapes)
+    each(shapes, function(shape)
+      shape:hide()
+    end)
+  end
+
+  return hideShapes
+end
+
 function resizeGridWithCell(callback)
   if not customizedGrid then
+    alert("No keyboard grid defined "..boo)
     callback()
     return
   end
@@ -470,40 +547,22 @@ local eventToCharacter = compose(
   partial(flip(invoke), 'lower')
 )
 
-function listenForKeyToAssign(callback)
-  local keyupType = hs.eventtap.event.types.keyup
-  local eventObject
-
-  eventObject = hs.eventtap.new({keyupType}, function(event)
-
-    local char = eventToCharacter(event)
-    -- Since is instantly triggered by the thing that triggered
-    -- the modal ...
-    if char == 't' then
-      return 5
-    end
-
-    alert(string.format('Received char: %s', char))
-
-    if isValidGridKey(char) then
-      eventObject:stop()
-      callback(char)
-    else
-      alert(string.format('Invalid key %s', char))
-    end
-
-    return true
-  end)
-
-  eventObject:start()
-
-  return eventObject
-end
 
 
-
---captureKeys(1, function(firstKey) end)
---captureKeys(2, function(firstKey, secondKey) end)
+-- Capture a number of keystrokes and sends it to a function
+--
+-- Example:
+--
+-- captureKeys(1, function(firstKey) print(firstKey) end)
+--
+-- captureKeys(2, function(firstKey, secondKey) print(secondKey) end, function(key)
+--   return hs.fnutils.contains({"a", "b", "c"}, key)
+-- end)
+--
+-- @param {int} numberOfKeystrokes
+-- @param {Function} callback gets each of the keystrokes as a parameter
+-- @param {Function} Optional validator for each of the keypresses
+-- @return nil
 function captureKeys(numberOfKeystrokes, callback, keyValidator)
   local events = {
     hs.eventtap.event.types.keydown
@@ -522,12 +581,14 @@ function captureKeys(numberOfKeystrokes, callback, keyValidator)
     currentWatcher:stop()
 
     local char = eventToCharacter(event)
-    hs.alert('received '..char)
 
     if isFunction(keyValidator) and not keyValidator(char) then
+      alert('received invalid char: '..char)
+      captureKeystroke()
       return true
     end
 
+    hs.alert('received char: '..char)
     table.insert(capturedKeys, char)
 
     if #capturedKeys < numberOfKeystrokes then
@@ -536,6 +597,7 @@ function captureKeys(numberOfKeystrokes, callback, keyValidator)
       callback(table.unpack(capturedKeys))
     end
 
+    -- delete the event handler
     return true
   end
 
