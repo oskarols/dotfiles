@@ -17,6 +17,7 @@ local grid = require "hs.grid"
 
 require "fntools"
 require "extensions"
+require "keyboard_grid"
 
 ---------------------------------------------------------
 -- SCREENS
