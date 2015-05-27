@@ -46,99 +46,22 @@ function newKeyboardGrid(callback)
     local bottomCoord = gridCoordinates(bottomRightGrid)
     local gridCopy =    deepcopy(gridKeys)
     local newGrid =     subGrid(gridCopy, topCoord, bottomCoord)
-
-    dbg(topCoord)
-    dbg(bottomCoord)
-
-    dbg(newGrid)
-    dbgf("Grid width: %s, height %s", #newGrid[1], #newGrid)
-
-    customizedGrid = newGrid
-
     local gridHeight = #newGrid
     local gridWidth  = #newGrid[1]
+
     grid.GRIDHEIGHT = gridHeight
     grid.GRIDWIDTH  = gridWidth
+    customizedGrid = newGrid
+
+    dbgf("Grid width: %s, height %s", #newGrid[1], #newGrid)
 
     callback()
   end
 
-  local allGridKeys = flatten(gridKeys)
+  local allGridKeys = flatten(gridKeys)qffqds
+  local keyValidator = partial(contains, allGridKeys)
 
   captureKeys(2, gridFromCoordinates, partial(contains, allGridKeys))
-end
-
-function drawGrid()
-  if not customizedGrid then
-    return nil
-  end
-
-  alert('drawing grid')
-
-  local grid = customizedGrid
-  local cells = {}
-
-  for i = 1, #grid do
-    for j = 1, #grid[i] do
-      table.insert(cells, {
-        y = i,
-        x = j,
-        char = grid[i][j]
-      })
-    end
-  end
-
-  local rectWidth = 60
-  local rectHeight = 60
-  local margin = 10
-  local roundedRadius = 10
-  local shapes = {}
-
-  local rects = each(cells, function(cellData)
-    local rect = {
-      x = (cellData.x * rectWidth) + (margin * cellData.x),
-      y = (cellData.y * rectHeight) + (margin * cellData.y),
-      w = rectWidth,
-      h = rectHeight
-    }
-    local rectangle = hs.drawing.rectangle(rect)
-
-    rectangle:setRoundedRectRadii(roundedRadius, roundedRadius)
-    rectangle:setFillColor({
-      red = 0.5,
-      blue = 0.5,
-      green = 0.5,
-      alpha = 1
-    })
-    rectangle:setStrokeColor({
-      red = 1,
-      blue = 1,
-      green = 1,
-      alpha = 1
-    })
-    rectangle:setStrokeWidth(5)
-    rectangle:show()
-
-    rect.x = rect.x + 10
-    rect.y = rect.y + 10
-
-    local text = hs.drawing.text(rect, cellData.char:upper())
-    text:show()
-    text:setTextSize(35)
-    text:bringToFront()
-
-    table.insert(shapes, rectangle)
-    table.insert(shapes, text)
-  end)
-
-  function hideShapes()
-    dbg(shapes)
-    each(shapes, function(shape)
-      shape:hide()
-    end)
-  end
-
-  return hideShapes
 end
 
 function resizeGridWithCell(callback)
@@ -177,6 +100,10 @@ function resizeGridWithCell(callback)
 
   captureKeys(2, manipulateWindow, partial(contains, allValidKeys))
 end
+
+---------------------------------------------------------
+-- GRID / TABLE UTILS
+---------------------------------------------------------
 
 -- grid = {
 --   {1, 2, 3},
@@ -271,4 +198,81 @@ function subGrid (grid, topCoord, bottomCoord) -- -> table
   end
 
   return grid
+end
+
+---------------------------------------------------------
+-- DRAWING RELATED
+---------------------------------------------------------
+
+function drawGrid()
+  if not customizedGrid then
+    return nil
+  end
+
+  alert('drawing grid')
+
+  local grid = customizedGrid
+  local cells = {}
+
+  for i = 1, #grid do
+    for j = 1, #grid[i] do
+      table.insert(cells, {
+        y = i,
+        x = j,
+        char = grid[i][j]
+      })
+    end
+  end
+
+  local rectWidth = 60
+  local rectHeight = 60
+  local margin = 10
+  local roundedRadius = 10
+  local shapes = {}
+
+  local rects = each(cells, function(cellData)
+    local rect = {
+      x = (cellData.x * rectWidth) + (margin * cellData.x),
+      y = (cellData.y * rectHeight) + (margin * cellData.y),
+      w = rectWidth,
+      h = rectHeight
+    }
+    local rectangle = hs.drawing.rectangle(rect)
+
+    rectangle:setRoundedRectRadii(roundedRadius, roundedRadius)
+    rectangle:setFillColor({
+      red = 0.5,
+      blue = 0.5,
+      green = 0.5,
+      alpha = 1
+    })
+    rectangle:setStrokeColor({
+      red = 1,
+      blue = 1,
+      green = 1,
+      alpha = 1
+    })
+    rectangle:setStrokeWidth(5)
+    rectangle:show()
+
+    rect.x = rect.x + 10
+    rect.y = rect.y + 10
+
+    local text = hs.drawing.text(rect, cellData.char:upper())
+    text:show()
+    text:setTextSize(35)
+    text:bringToFront()
+
+    table.insert(shapes, rectangle)
+    table.insert(shapes, text)
+  end)
+
+  function hideShapes()
+    dbg(shapes)
+    each(shapes, function(shape)
+      shape:hide()
+    end)
+  end
+
+  return hideShapes
 end
