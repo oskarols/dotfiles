@@ -34,10 +34,6 @@ function tap (a)
   return a
 end
 
-local yay = "ᕙ(⇀‸↼‶)ᕗ"
-
-local boo = "ლ(ಠ益ಠლ)"
-
 ---------------------------------------------------------
 -- COORDINATES, POINTS, RECTS, FRAMES, TABLES
 ---------------------------------------------------------

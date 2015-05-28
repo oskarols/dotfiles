@@ -41,9 +41,37 @@ customizedGrid = nil
 
 function newKeyboardGrid(callback)
 
-  function gridFromCoordinates(topLeftGrid, bottomRightGrid)
-    local topCoord =    gridCoordinates(topLeftGrid)
-    local bottomCoord = gridCoordinates(bottomRightGrid)
+  function normalizeCoordinates(top, bottom)
+    if isReverseOrder(top, bottom) then
+      top, bottom = bottom, top
+    end
+    if bottomRightToTopLeftConfiguration(top, bottom) then
+      top, bottom = {
+        x = top.x,
+        y = bottom.y
+      },
+      {
+        x = bottom.x,
+        y = top.y
+      }
+    end
+
+    return {top, bottom}
+  end
+
+  function bottomRightToTopLeftConfiguration(top, bottom)
+    return top.y > bottom.y
+  end
+
+  function isReverseOrder(top, bottom)
+    return top.x > bottom.x
+  end
+
+  function createGridFromCoordinates(topLeftGrid, bottomRightGrid)
+    local coords = normalizeCoordinates(gridCoordinates(topLeftGrid), gridCoordinates(bottomRightGrid))
+    local topCoord = coords[1]
+    local bottomCoord = coords[2]
+
     local gridCopy =    deepcopy(gridKeys)
     local newGrid =     subGrid(gridCopy, topCoord, bottomCoord)
     local gridHeight = #newGrid
@@ -58,10 +86,10 @@ function newKeyboardGrid(callback)
     callback()
   end
 
-  local allGridKeys = flatten(gridKeys)qffqds
+  local allGridKeys = flatten(gridKeys)
   local keyValidator = partial(contains, allGridKeys)
 
-  captureKeys(2, gridFromCoordinates, partial(contains, allGridKeys))
+  captureKeys(2, createGridFromCoordinates, keyValidator)
 end
 
 function resizeGridWithCell(callback)
@@ -79,8 +107,10 @@ function resizeGridWithCell(callback)
   end
 
   function manipulateWindow(topLeftGrid, bottomRightGrid)
-    local topCoord = getCoordinates(customizedGrid, topLeftGrid)
-    local bottomCoord = getCoordinates(customizedGrid, bottomRightGrid)
+    local coords = normalizeCoordinates(getCoordinates(customizedGrid, topLeftGrid), getCoordinates(customizedGrid, bottomRightGrid))
+    local topCoord = coords[1]
+    local bottomCoord = coords[2]
+
     local window = hs.window.focusedWindow()
     local gridCell = subGrid(deepcopy(customizedGrid), topCoord, bottomCoord)
     local cell = {
@@ -137,13 +167,9 @@ function getCoordinates(table, value)
   end
 
   return {
-    ['x'] = x,
-    ['y'] = y
+    x = x,
+    y = y
   }
-end
-
-function drawgrid(grid, cells)
-
 end
 
 gridCoordinates = partial(getCoordinates, gridKeys)
