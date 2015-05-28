@@ -168,18 +168,23 @@ function ApplicationWindowStates:new()
 end
 
 function ApplicationWindowStates:key(window)
-  if not window then return '' end
+  if not window then
+    return ''
+  end
+
   local applicationName = compose(
     getProperty("application"),
     getProperty("title")
   )(window)
+
+  dbg(applicationName..':'..window:id())
 
   return applicationName..':'..window:id()
 end
 
 function ApplicationWindowStates:save()
   local window = hs.window.focusedWindow()
-  local applicationStateKey = self.key(window)
+  local applicationStateKey = self:key(window)
 
   self[applicationStateKey] = {
     ["screen"] = hs.mouse.getCurrentScreen(),
@@ -189,12 +194,12 @@ function ApplicationWindowStates:save()
 end
 
 function ApplicationWindowStates:lookup(window)
-  local key = self.key(window)
+  local key = self:key(window)
   return self[key]
 end
 
 function ApplicationWindowStates:restore(window)
-  local key = self.key(window)
+  local key = self:key(window)
 
   compose(
     partial(result, self),
@@ -259,7 +264,6 @@ function launchOrCycleFocus(applicationName)
       targetWindow = nextWindow
     else
       targetWindow = hs.window.focusedWindow()
-
     end
 
     if not targetWindow then
