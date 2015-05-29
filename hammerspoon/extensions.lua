@@ -35,6 +35,39 @@ function tap (a)
 end
 
 ---------------------------------------------------------
+-- MODAL HOTKEY UTILS
+---------------------------------------------------------
+
+mode = {}
+
+mode.hide = nil
+
+mode.enter = function(modalName, subName)
+  if subName then modalName = string.format('%s::%s', modalName, subName) end
+  modeLabel = string.format("Mode: %s", modalName)
+
+  local pos = {x = 0, y = 10, w = 300, h = 30}
+  modeIndicator = hs.drawing.rectangle(pos)
+  modeIndicator:setRoundedRectRadii(10, 10)
+
+  pos.x, pos.y = pos.x + 15, pos.y + 18
+  modeText = hs.drawing.text(pos, modeLabel)
+  modeText:setTextSize(16)
+
+  modeIndicator:show()
+  modeText:show()
+
+  mode.hide = function()
+    modeText:hide()
+    modeIndicator:hide()
+  end
+end
+
+mode.exit = function()
+  mode.hide()
+end
+
+---------------------------------------------------------
 -- COORDINATES, POINTS, RECTS, FRAMES, TABLES
 ---------------------------------------------------------
 
@@ -253,6 +286,7 @@ function launchOrCycleFocus(applicationName)
       -- Becoming main means
       -- * gain focus (although docs say differently?)
       -- * next call to launchOrFocus will focus the main window <- important
+      -- * when fetching allWindows() from an application mainWindow will be the first one
       --
       -- If we have two applications, each with multiple windows
       -- i.e:
@@ -312,7 +346,9 @@ local eventToCharacter = compose(
 --
 -- Example:
 --
--- captureKeys(1, function(firstKey) print(firstKey) end)
+-- captureKeys(1, function(firstKey)
+--   print(firstKey)
+-- end)
 --
 -- captureKeys(2, function(firstKey, secondKey) print(secondKey) end, function(key)
 --   return hs.fnutils.contains({"a", "b", "c"}, key)
@@ -342,12 +378,12 @@ function captureKeys(numberOfKeystrokes, callback, keyValidator)
     local char = eventToCharacter(event)
 
     if isFunction(keyValidator) and not keyValidator(char) then
-      alert('received invalid char: '..char)
+      dbgf('received invalid char: %s', char)
       captureKeystroke()
       return true
     end
 
-    hs.alert('received char: '..char)
+    dbgf('received char: %s', char)
     table.insert(capturedKeys, char)
 
     if #capturedKeys < numberOfKeystrokes then

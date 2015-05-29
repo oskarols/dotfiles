@@ -20,7 +20,6 @@ require "extensions"
 require "keyboard_grid"
 
 yay = "ᕙ(⇀‸↼‶)ᕗ"
-
 boo = "ლ(ಠ益ಠლ)"
 
 ---------------------------------------------------------
@@ -97,6 +96,7 @@ hs.hotkey.bind(hyper, "L", function()
       select
       tell menu 1
         click (first menu item whose title = (get "%s"))
+      }
       end tell
     end tell
   end tell
@@ -140,13 +140,13 @@ local createNewGrid = hs.hotkey.modal.new(hyper, "W")
 
 function createNewGridExit()
   createNewGrid:exit()
-  alert('Exited screenGrid')
+  mode.exit("keygrid", "newgrid")
 end
 
 createNewGrid:bind({}, 'escape', createNewGridExit)
 
 function createNewGrid:entered()
-  alert(string.format('Entered Grid Configuration Mode'))
+  mode.enter("keygrid", "newgrid")
   hideGridfn = drawGrid()
 
   local function hideGridAndExit()
@@ -163,29 +163,26 @@ local resizeWithCell = hs.hotkey.modal.new(hyper, "Q")
 
 function resizeWithCellExit()
   resizeWithCell:exit()
-  alert('Exited resizeWithCell')
+  mode.exit("keygrid", "resize")
 end
 createNewGrid:bind({}, 'escape', resizeWithCellExit)
 
 function resizeWithCell:entered()
-  alert(string.format('Entered Grid Resize Mode'))
-  resizeGridWithCell(resizeWithCellExit)
+  mode.enter("keygrid", "resize")
+  hideGridfn = drawGrid()
+
+  local function hideGridAndExit()
+    if hideGridfn then hideGridfn() end
+    resizeWithCellExit()
+  end
+
+  resizeGridWithCell(hideGridAndExit)
 end
 
 
 ---------------------------------------------------------
 -- EVERNOTE
 ---------------------------------------------------------
-
-mode = {}
-
-mode.enter = function()
-
-end
-
-mode.exit = function()
-
-end
 
 local evernote = hs.hotkey.modal.new(hyper, "E")
 

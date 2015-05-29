@@ -100,10 +100,10 @@ function resizeGridWithCell(callback)
   end
 
   -- since hs.grid uses 0 based indeces ..
-  local function HSGridCellAdapter(cell)
-    cell.x = cell.x - 1
-    cell.y = cell.y - 1
-    return cell
+  local function HSGridCellAdapter(rect)
+    rect.x = rect.x - 1
+    rect.y = rect.y - 1
+    return rect
   end
 
   function manipulateWindow(topLeftGrid, bottomRightGrid)
@@ -113,15 +113,15 @@ function resizeGridWithCell(callback)
 
     local window = hs.window.focusedWindow()
     local gridCell = subGrid(deepcopy(customizedGrid), topCoord, bottomCoord)
-    local cell = {
+    local rect = {
       x = topCoord.x,
       y = topCoord.y,
       h = #gridCell,
       w = #gridCell[1]
     }
 
-    cell = HSGridCellAdapter(cell)
-    hs.grid.set(window, cell, window:screen())
+    rect = HSGridCellAdapter(rect)
+    hs.grid.set(window, rect, window:screen())
 
     callback()
   end
@@ -230,15 +230,18 @@ end
 -- DRAWING RELATED
 ---------------------------------------------------------
 
+function currentScreen()
+  return hs.window.focusedWindow():screen()
+end
+
 function drawGrid()
   if not customizedGrid then
     return nil
   end
 
-  alert('drawing grid')
-
   local grid = customizedGrid
   local cells = {}
+
 
   for i = 1, #grid do
     for j = 1, #grid[i] do
@@ -252,13 +255,23 @@ function drawGrid()
 
   local rectWidth = 60
   local rectHeight = 60
-  local margin = 10
+  local margin = 2
   local roundedRadius = 10
   local shapes = {}
 
+  local cellRowCount = #grid[1]
+  local gridWidth = (cellRowCount * (rectWidth + margin))
+  local s = currentScreen()
+  local m = s:currentMode()
+
+  dbgf('mode w: %d, grid w: %d', m.w / 2, gridWidth)
+  local t = (m.w - gridWidth) / 2
+
+
   local rects = each(cells, function(cellData)
     local rect = {
-      x = (cellData.x * rectWidth) + (margin * cellData.x),
+      -- -1 since indexes start at 0, hence otherwise the cells would be offset
+      x = ((cellData.x - 1) * rectWidth) + (margin * cellData.x) + t,
       y = (cellData.y * rectHeight) + (margin * cellData.y),
       w = rectWidth,
       h = rectHeight
@@ -285,8 +298,10 @@ function drawGrid()
     rect.y = rect.y + 10
 
     local text = hs.drawing.text(rect, cellData.char:upper())
+
     text:show()
     text:setTextSize(35)
+    text:setTextFont("Lucida Grande")
     text:bringToFront()
 
     table.insert(shapes, rectangle)
