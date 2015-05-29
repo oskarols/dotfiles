@@ -136,6 +136,15 @@ local function getNextWindow(windows, window)
 
   windows = filter(windows, hs.window.isStandard)
   windows = filter(windows, hs.window.isVisible)
+
+  -- need to sort by ID, since the default order of the window
+  -- isn't usable when we change the mainWindow
+  -- since mainWindow is always the first of the windows
+  -- hence we would always get the window succeeding mainWindow
+  table.sort(windows, function(w1, w2)
+    return w1:id() > w2:id()
+  end)
+
   lastIndex = indexOf(windows, window)
 
   return windows[getNextIndex(windows, lastIndex)]
