@@ -231,7 +231,9 @@ end
 ---------------------------------------------------------
 
 function currentScreen()
-  return hs.window.focusedWindow():screen()
+  local window =  hs.window.focusedWindow()
+  if not window then return nil end
+  return window:screen()
 end
 
 function drawGrid()
