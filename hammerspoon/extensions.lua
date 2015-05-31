@@ -35,6 +35,23 @@ function tap (a)
 end
 
 ---------------------------------------------------------
+-- Extension of native objects and modules
+---------------------------------------------------------
+
+-- Create a unique string for a window
+-- @returns string
+function hs.window:key()
+  local applicationName = compose(
+    getProperty("application"),
+    getProperty("title")
+  )(self)
+
+  return string.format("%s:%s", applicationName, self:id())
+end
+
+
+
+---------------------------------------------------------
 -- MODAL HOTKEY UTILS
 ---------------------------------------------------------
 
@@ -104,6 +121,8 @@ function manipulateScreen(func)
   end
 end
 
+
+-- a
 fullScreenCurrent = manipulateScreen(function(window, windowFrame, screen, screenFrame)
   window:setFrame(screenFrame)
 end)
@@ -214,14 +233,7 @@ function ApplicationWindowStates:key(window)
     return ''
   end
 
-  local applicationName = compose(
-    getProperty("application"),
-    getProperty("title")
-  )(window)
-
-  dbg(applicationName..':'..window:id())
-
-  return applicationName..':'..window:id()
+  return window:key()
 end
 
 function ApplicationWindowStates:save()
