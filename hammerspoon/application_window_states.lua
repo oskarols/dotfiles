@@ -43,7 +43,7 @@ function ApplicationWindowStates:save()
   self[applicationStateKey] = {
     ["screen"] = hs.mouse.getCurrentScreen(),
     ["mouse"]  = hs.mouse.getAbsolutePosition(), -- mouse or nil
-    ["window"] = window
+    ["windowFrame"] = window:frame()
   }
 end
 
@@ -71,9 +71,8 @@ function ApplicationWindowStates:restore(window, restoreFn)
   )
 
   local restoreScreenFrame = compose(
-    maybe(getProperty("window")),
-    maybe(function(savedWindow)
-      local savedFrame = savedWindow:frame()
+    maybe(getProperty("windowFrame")),
+    maybe(function(savedFrame)
       window:setFrame(savedFrame)
     end)
   )
