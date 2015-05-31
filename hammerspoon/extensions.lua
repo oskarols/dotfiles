@@ -17,6 +17,15 @@ local alert = require "hs.alert"
 local grid = require "hs.grid"
 local geometry = require "hs.geometry"
 
+require("application_window_states")
+
+---------------------------------------------------------
+-- Shared Globals
+---------------------------------------------------------
+
+-- used to save states for windows
+appStates = ApplicationWindowStates:new()
+
 ---------------------------------------------------------
 -- Debugging
 ---------------------------------------------------------
@@ -49,6 +58,10 @@ function hs.window:key()
   return string.format("%s:%s", applicationName, self:id())
 end
 
+
+function hs.mouse.centerOnRect(rect)
+  hs.mouse.setAbsolutePosition(geometry.rectMidPoint(rect))
+end
 
 
 ---------------------------------------------------------
@@ -121,6 +134,17 @@ function manipulateScreen(func)
   end
 end
 
+
+fullScreenCurrent = function()
+  window = hs.window.focusedWindow()
+  if not window then return end
+
+  if appStates:hasPreviousState(window) and appStates:lookup(window)["fullscreen"] then
+    appStates:restore(window)
+  else
+
+  end
+end
 
 -- a
 fullScreenCurrent = manipulateScreen(function(window, windowFrame, screen, screenFrame)
@@ -217,63 +241,7 @@ function getApplicationWindow(applicationName)
   end
 end
 
--- Captured snapshots of an application windows state
--- used to save and restore snapshots when moving
--- between applications
 
-ApplicationWindowStates = {}
-
-function ApplicationWindowStates:new()
-  self.__index = self
-  return setmetatable({}, self)
-end
-
-function ApplicationWindowStates:key(window)
-  if not window then
-    return ''
-  end
-
-  return window:key()
-end
-
-function ApplicationWindowStates:save()
-  local window = hs.window.focusedWindow()
-  local applicationStateKey = self:key(window)
-
-  self[applicationStateKey] = {
-    ["screen"] = hs.mouse.getCurrentScreen(),
-    ["mouse"]  = hs.mouse.getAbsolutePosition(), -- mouse or nil
-    ["window"] = window
-  }
-end
-
-function ApplicationWindowStates:lookup(window)
-  local key = self:key(window)
-  return self[key]
-end
-
-function ApplicationWindowStates:restore(window)
-  local key = self:key(window)
-
-  compose(
-    partial(result, self),
-    maybe(getProperty('mouse')),
-    -- even if the mouse goes outside the window, and that app is saved
-    -- make sure it appears within the window
-    maybe(function(mouseCoordinates)
-      local windowFrame = window:frame()
-
-      if geometry.isPointInRect(mouseCoordinates, windowFrame) then
-        hs.mouse.setAbsolutePosition(mouseCoordinates)
-      else
-        centerMouseOnRect(windowFrame)
-      end
-    end)
-  )(key)
-end
-
-
-appStates = ApplicationWindowStates:new()
 
 -- Needed to enable cycling of application windows
 lastToggledApplication = ''
@@ -331,7 +299,7 @@ function launchOrCycleFocus(applicationName)
       appStates:restore(targetWindow)
     else
       local windowFrame = targetWindow:frame()
-      centerMouseOnRect(windowFrame)
+      hs.mouse.centerOnRect(windowFrame)
     end
 
     mouseHighlight()
