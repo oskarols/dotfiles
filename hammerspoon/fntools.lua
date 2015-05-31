@@ -102,3 +102,29 @@ function deepcopy(orig)
     end
     return copy
 end
+
+-- does a shallow comparison of
+-- key based tables
+
+-- a = {h = 50, w = 50}
+-- b = {h = 50, w = 50}
+-- c = {h = 100, w = 100}
+
+-- compareShallow(a, b)
+-- > true
+
+-- compareShallow(a, c)
+-- > false
+
+-- @param tableA table
+-- @param tableB table
+
+-- @returns bool
+function compareShallow(tableA, tableB)
+  for k, v in pairs(tableA) do
+    -- dbgf('comparing %s to %s', v, tableB[k])
+    if v ~= tableB[k] then return false end
+  end
+
+  return true
+end
