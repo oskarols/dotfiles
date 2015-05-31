@@ -59,6 +59,14 @@ function hs.window:key()
 end
 
 
+function hs.window:isMaximized()
+  local screen = self:screen()
+  local screenFrame = screen:frame()
+
+  return compareShallow(self:frame(), screenFrame)
+end
+
+
 function hs.mouse.centerOnRect(rect)
   hs.mouse.setAbsolutePosition(geometry.rectMidPoint(rect))
 end
@@ -139,17 +147,41 @@ fullScreenCurrent = function()
   window = hs.window.focusedWindow()
   if not window then return end
 
-  if appStates:hasPreviousState(window) and appStates:lookup(window)["fullscreen"] then
-    appStates:restore(window)
-  else
+  -- no prev state
+    -- fullscreen
+    -- no fullscreen
+      -- toggle fullscreen
 
+  -- prev state
+    -- fullscreen
+      -- revert to prev state if prev state
+    -- no fullscreen
+      -- toggle fullscreen
+
+  if window:isMaximized() then
+    dbg('NOT MAXIMIZED')
+    if appStates:lookup(window) then
+      dbg('FOUND STATE')
+      -- if we restore the entire state though, the state
+      -- that could have been altered since the last state save
+      -- (probably triggered by some window manipulation hotkey)
+      -- is lost
+
+      -- perhaps distinguish between a full state reset and a partial one?
+      -- so we could just reset the window position
+      appStates:restore(window)
+      -- else would be to just make it smaller?
+      -- i.e. we're already a huge window, then make it smaller and save the state
+    end
+  else
+    dbg('MAXIMIZING')
+    appStates:save()
+    manipulateScreen(function(window, windowFrame, screen, screenFrame)
+      window:setFrame(screenFrame)
+    end)()
   end
 end
 
--- a
-fullScreenCurrent = manipulateScreen(function(window, windowFrame, screen, screenFrame)
-  window:setFrame(screenFrame)
-end)
 
 screenToRight = manipulateScreen(function(window, windowFrame, screen, screenFrame)
   windowFrame.w = screenFrame.w / 2
