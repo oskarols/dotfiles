@@ -121,6 +121,8 @@ end
 
 -- @returns bool
 function compareShallow(tableA, tableB)
+  if tableA == nil or tableB == nil then return false end
+
   for k, v in pairs(tableA) do
     -- dbgf('comparing %s to %s', v, tableB[k])
     if v ~= tableB[k] then return false end
