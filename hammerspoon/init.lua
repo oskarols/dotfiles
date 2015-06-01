@@ -119,7 +119,6 @@ hs.hotkey.bind(hyper, "C", function()
   if boundApplication then
     boundApplication:disable()
   end
-  hs.alert(appName)
 
   boundApplication = hs.hotkey.bind(hyper, "V", launchOrCycleFocus(appName))
 
@@ -127,7 +126,7 @@ hs.hotkey.bind(hyper, "C", function()
   boundApplication:disable()
   boundApplication:enable()
 
-  hs.alert(string.format("Binding: %s", appName))
+  hs.alert(string.format("Binding: \"%s\" => ⌘ + V", appName))
 end)
 
 ---------------------------------------------------------
@@ -207,23 +206,27 @@ evernote:bind({}, 'N', function()
   evernoteExit()
 end)
 
+
+
 ---------------------------------------------------------
 -- VOX
 ---------------------------------------------------------
 
 hs.hotkey.bind(hyper, "I", function()
   local currentlyFocusedWindow = hs.window.focusedWindow()
-  local vox = getApplicationWindow('VOX')
-  local voxapp = vox:application()
-  vox:focus()
+  local voxWindow = getApplicationWindow('VOX')
 
-  voxapp:selectMenuItem({"Controls", "Go to Current Track"})
+  local vox = voxWindow:application()
+
+  voxWindow:focus()
+
+  vox:selectMenuItem({"Controls", "Go to Current Track"})
   vox:selectMenuItem({"Edit", "Delete and Move to Trash"})
 
   -- Have to use long timeout, else doesn't enable the
   -- menu items .. :(
   hs.timer.doAfter(1, function()
-    voxapp:selectMenuItem({"Controls", "Play"})
+    vox:selectMenuItem({"Controls", "Play"})
     currentlyFocusedWindow:focus()
   end)
 end)
