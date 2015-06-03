@@ -197,7 +197,7 @@ end
 evernote:bind({}, 'escape', evernoteExit)
 
 evernote:bind({}, 'F', function()
-  hs.eventtap.keyStroke({'ctrl', 'cmd'}, 9)
+  hs.eventtap.keyStroke({'cmd', 'alt'}, 9)
   evernoteExit()
 end)
 
