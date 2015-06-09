@@ -22,6 +22,8 @@ require "keyboard_grid"
 yay = "ᕙ(⇀‸↼‶)ᕗ"
 boo = "ლ(ಠ益ಠლ)"
 
+hs.crash.crashLogToNSLog = true
+
 ---------------------------------------------------------
 -- SCREENS
 ---------------------------------------------------------
@@ -70,6 +72,7 @@ hs.hotkey.bind(hyper, "4", launchOrCycleFocus("XCode"))
 hs.hotkey.bind(hyper, "5", launchOrCycleFocus("Evernote"))
 hs.hotkey.bind(hyper, "6", launchOrCycleFocus("Spotify"))
 hs.hotkey.bind(hyper, "7", launchOrCycleFocus("Vox"))
+hs.hotkey.bind(hyper, "8", launchOrCycleFocus("VirtualBoxVM"))
 
 hs.hotkey.bind(hyper, "Z", launchOrCycleFocus("Finder"))
 
@@ -104,6 +107,7 @@ hs.hotkey.bind(hyper, "L", function()
 
   hs.applescript.applescript(script:format(language))
 end)
+
 
 ---------------------------------------------------------
 -- ON-THE-FLY KEYBIND
@@ -234,6 +238,8 @@ end)
 ---------------------------------------------------------
 -- MISC
 ---------------------------------------------------------
+
+
 
 hs.hotkey.bind(hyper, "K", function()
   hs.hints.windowHints()
