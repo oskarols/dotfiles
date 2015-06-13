@@ -1,8 +1,5 @@
 require "fntools"
 
-partial = hs.fnutils.partial
-sequence = hs.fnutils.sequence
-
 local fnutils = require "hs.fnutils"
 local map = fnutils.map
 local each = fnutils.each
@@ -27,9 +24,6 @@ grid.GRIDWIDTH = 3
 grid.MARGINX = 0
 grid.MARGINY = 0
 
-local topLeftGrid = nil
-local bottomRightGrid = nil
-
 gridKeys = {
   { 1,   2,   3,   4,   5,   6,   7 },
   {"q", "w", "e", "r", "t", "y", "u"},
@@ -37,51 +31,39 @@ gridKeys = {
   {"z", "x", "c", "v", "b", "n", "m"}
 }
 
+-- @param table
+-- @returns height, width
+function table.dimensions(self)
+  return #self, #self[1]
+end
+
 customizedGrid = nil
 
+-- basically we want something that behaves just like a table
+-- but extended with extra methods ..
+-- KeyboardGrid = {
+--   layout = nil
+-- }
+
+-- KeyboardGrid.new = function(layout, topPoint, bottomPoint)
+--   topPoint, bottomPoint = normalizePoints(topPoint, bottomPoint)
+-- end
+
+-- callback called at the end of creating a new grid
+-- de-facto used to exit any state used when creating the grid
 function newKeyboardGrid(callback)
 
-  function normalizeCoordinates(top, bottom)
-    if isReverseOrder(top, bottom) then
-      top, bottom = bottom, top
-    end
-    if bottomRightToTopLeftConfiguration(top, bottom) then
-      top, bottom = {
-        x = top.x,
-        y = bottom.y
-      },
-      {
-        x = bottom.x,
-        y = top.y
-      }
-    end
+  function createGridFromCoordinates(topLeftGridKey, bottomRightGridKey)
+    local keyboardGridPoint = partial(getCoordinates, gridKeys)
+    local topPoint, bottomPoint = normalizePoints(keyboardGridPoint(topLeftGridKey),
+                                                  keyboardGridPoint(bottomRightGridKey))
 
-    return {top, bottom}
-  end
+    local newGrid = subGrid(gridKeys, topPoint, bottomPoint)
 
-  function bottomRightToTopLeftConfiguration(top, bottom)
-    return top.y > bottom.y
-  end
+    grid.GRIDHEIGHT, grid.GRIDWIDTH = table.dimensions(newGrid)
 
-  function isReverseOrder(top, bottom)
-    return top.x > bottom.x
-  end
-
-  function createGridFromCoordinates(topLeftGrid, bottomRightGrid)
-    local coords = normalizeCoordinates(gridCoordinates(topLeftGrid), gridCoordinates(bottomRightGrid))
-    local topCoord = coords[1]
-    local bottomCoord = coords[2]
-
-    local gridCopy =    deepcopy(gridKeys)
-    local newGrid =     subGrid(gridCopy, topCoord, bottomCoord)
-    local gridHeight = #newGrid
-    local gridWidth  = #newGrid[1]
-
-    grid.GRIDHEIGHT = gridHeight
-    grid.GRIDWIDTH  = gridWidth
+    -- persist
     customizedGrid = newGrid
-
-    dbgf("Grid width: %s, height %s", #newGrid[1], #newGrid)
 
     callback()
   end
@@ -92,7 +74,10 @@ function newKeyboardGrid(callback)
   captureKeys(2, createGridFromCoordinates, keyValidator)
 end
 
+-- grid cell being a poor name for a basically a grid within a grid ..
+-- should probably be called table-rect or something
 function resizeGridWithCell(callback)
+
   if not customizedGrid then
     alert("No keyboard grid defined "..boo)
     callback()
@@ -106,35 +91,68 @@ function resizeGridWithCell(callback)
     return rect
   end
 
-  function manipulateWindow(topLeftGrid, bottomRightGrid)
-    local coords = normalizeCoordinates(getCoordinates(customizedGrid, topLeftGrid), getCoordinates(customizedGrid, bottomRightGrid))
-    local topCoord = coords[1]
-    local bottomCoord = coords[2]
+  function manipulateWindow(topLeftGridKey, bottomRightGridKey)
+    local getGridPoint = partial(getCoordinates, customizedGrid)
+    local topPoint, bottomPoint = normalizePoints(getGridPoint(topLeftGridKey),
+                                                  getGridPoint(bottomRightGridKey))
 
     local window = hs.window.focusedWindow()
-    local gridCell = subGrid(deepcopy(customizedGrid), topCoord, bottomCoord)
-    local rect = {
-      x = topCoord.x,
-      y = topCoord.y,
-      h = #gridCell,
-      w = #gridCell[1]
-    }
+    local gridCell = subGrid(customizedGrid, topPoint, bottomPoint)
+    local rect = topPoint
+    rect.h, rect.w = table.dimensions(gridCell)
 
     rect = HSGridCellAdapter(rect)
+
     hs.grid.set(window, rect, window:screen())
 
     callback()
   end
 
   local allValidKeys = flatten(customizedGrid)
+  local keyValidator = partial(contains, allValidKeys)
 
-  captureKeys(2, manipulateWindow, partial(contains, allValidKeys))
+  captureKeys(2, manipulateWindow, keyValidator)
 end
 
 ---------------------------------------------------------
 -- GRID / TABLE UTILS
 ---------------------------------------------------------
 
+-- given two points {x, y} normalizes them
+-- so the first point will always be in the top left
+-- and the bottom point always bottom right
+function normalizePoints(top, bottom)
+
+  -- top point is to the right of bottom point
+  function isVerticallyReverseOrder(top, bottom)
+    return top.x > bottom.x
+  end
+
+  -- top is in the bottom left corner
+  function isYReverseOrder(top, bottom)
+    return top.y > bottom.y
+  end
+
+  if isVerticallyReverseOrder(top, bottom) then
+    top, bottom = bottom, top
+  end
+  if isYReverseOrder(top, bottom) then
+    top, bottom = {
+      x = top.x,
+      y = bottom.y
+    },
+    {
+      x = bottom.x,
+      y = top.y
+    }
+  end
+
+  return top, bottom
+end
+
+-- Get the point {x, y} from a given value inside
+-- a table. Multidimensional index-of.
+--
 -- grid = {
 --   {1, 2, 3},
 --   {4, 5, 6},
@@ -172,8 +190,6 @@ function getCoordinates(table, value)
   }
 end
 
-gridCoordinates = partial(getCoordinates, gridKeys)
-
 -- Extract a subset of a grid using coordinates
 --
 -- grid = {
@@ -189,6 +205,8 @@ gridCoordinates = partial(getCoordinates, gridKeys)
 --   {8, 8}
 -- }
 function subGrid (grid, topCoord, bottomCoord) -- -> table
+  -- since we don't want to change it in-place
+  grid = deepcopy(grid)
 
   -- sentinel value, used to indicate a non-value
   NIL = 999
