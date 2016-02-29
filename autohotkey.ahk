@@ -3,20 +3,22 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-CapsLock::#+^!
+; Turn off Capslock toggling, key will still work for shortcuts though
+SetCapsLockState, AlwaysOff
 
-#+^!z::
-run,explorer.exe,,max
-return
+; Swap Capslock with Ctrl
+CapsLock::Ctrl
 
+; Size 50% to the left
+CapsLock & a::Send #{Left}
 
-#+^!a::Send #{Left}
+; Size 50% to the right
+CapsLock & s::Send #{Right}
 
+; Fullscreen
+CapsLock & f::Send #{Up}
 
-#+^!s::Send #{Right}
-
-
-#+^!f::Send #{Up}
+CapsLock & {Left}::Send +#{Left}
 
 RunOrActivate(Target, WinTitle = "")
 {
@@ -56,8 +58,12 @@ RunOrActivateTrayTipOff:
 	TrayTip
 Return
 
-#+^!1::RunOrActivate("devenv.exe")
+CapsLock & z::
+run,explorer.exe,,max
+return
 
-#+^!2::RunOrActivate("cmd.exe")
+CapsLock & 1::RunOrActivate("devenv.exe")
 
-#+^!3::RunOrActivate("chrome.exe")
+CapsLock & 2::RunOrActivate("ConEmu64.exe")
+
+CapsLock & 3::RunOrActivate("chrome.exe")
