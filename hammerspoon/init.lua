@@ -65,7 +65,7 @@ end)
 -- APP HOTKEYS
 ---------------------------------------------------------
 
-hs.hotkey.bind(hyper, "1", launchOrCycleFocus("Sublime Text"))
+hs.hotkey.bind(hyper, "1", launchOrCycleFocus("Atom"))
 hs.hotkey.bind(hyper, "2", launchOrCycleFocus("iTerm"))
 hs.hotkey.bind(hyper, "3", launchOrCycleFocus("Google Chrome"))
 hs.hotkey.bind(hyper, "4", launchOrCycleFocus("XCode"))
