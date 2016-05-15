@@ -1,7 +1,7 @@
 # Pull in brew binaries
 export PATH="/usr/local/bin:$PATH"
 
-alias pyserv="python -m SimpleHTTPServer"
+alias pyserv="python3 -m http.server --cgi"
 alias config="subl ~/.bash_profile"
 alias reload="source ~/.bash_profile"
 alias dotfiles="cd ~/coding/dotfiles"
@@ -23,7 +23,7 @@ export EDITOR="subl -w"
 # pyenv auto completions
 if which pyenv > /dev/null; then eval "$(pyenv init -)"; fi
 
-# nvm 
+# nvm
 export NVM_DIR=~/.nvm
 source $(brew --prefix nvm)/nvm.sh
 

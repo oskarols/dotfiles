@@ -1,0 +1,11 @@
+"*":
+  core: {}
+  editor:
+    fontFamily: "Monaco"
+    fontSize: 11
+    invisibles: {}
+  emmet: {}
+  "exception-reporting":
+    userId: "3618fb54-04f9-7e23-c668-d3631d1f377a"
+  welcome:
+    showOnStartup: false
