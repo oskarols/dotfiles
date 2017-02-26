@@ -273,27 +273,31 @@ function getApplicationWindow(applicationName)
   end
 end
 
-
-
 -- Needed to enable cycling of application windows
 lastToggledApplication = ''
 
-function launchOrCycleFocus(applicationName)
+function launchOrCycleFocus(applicationName, applicationTitle)
   return function()
     local nextWindow = nil
     local targetWindow = nil
     local focusedWindow          = hs.window.focusedWindow()
     local lastToggledApplication = focusedWindow and focusedWindow:application():title()
 
+    -- Note, applicationTitle is optional, and only useful in those
+    -- cases where the name and title are not the same (i.e. Visual Studio Code).
+    if applicationTitle == nil then
+        applicationTitle = applicationName
+    end
+
     if not focusedWindow then return nil end
 
     -- save the state of currently focused app
     appStates:save()
 
-    dbgf('last: %s, current: %s', lastToggledApplication, applicationName)
+    dbgf('last: %s, current: %s', lastToggledApplication, applicationTitle)
 
-    if lastToggledApplication == applicationName then
-      nextWindow = getNextWindow(applicationName, focusedWindow)
+    if lastToggledApplication == applicationTitle then
+      nextWindow = getNextWindow(applicationTitle, focusedWindow)
 
       -- Becoming main means
       -- * gain focus (although docs say differently?)
@@ -315,6 +319,7 @@ function launchOrCycleFocus(applicationName)
       hs.application.launchOrFocus(applicationName)
     end
 
+    -- this blindly assumed that previous steps have been successful..
     if nextWindow then -- won't be available when appState empty
       targetWindow = nextWindow
     else
