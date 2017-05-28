@@ -7,63 +7,11 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 SetCapsLockState, AlwaysOff
 
 ; Swap Capslock with Ctrl
-CapsLock::Ctrl
-
-; Size 50% to the left
-CapsLock & a::Send #{Left}
-
-; Size 50% to the right
-CapsLock & s::Send #{Right}
-
-; Fullscreen
-CapsLock & f::Send #{Up}
-
-CapsLock & {Left}::Send +#{Left}
-
-RunOrActivate(Target, WinTitle = "")
-{
-	; Get the filename without a path
-	SplitPath, Target, TargetNameOnly
-
-	Process, Exist, %TargetNameOnly%
-	If ErrorLevel > 0
-		PID = %ErrorLevel%
-	Else
-		Run, %Target%, , , PID
-
-	; At least one app (Seapine TestTrack wouldn't always become the active
-	; window after using Run), so we always force a window activate.
-	; Activate by title if given, otherwise use PID.
-	If WinTitle <>
-	{
-		SetTitleMatchMode, 2
-		WinWait, %WinTitle%, , 3
-		TrayTip, , Activating Window Title "%WinTitle%" (%TargetNameOnly%)
-		WinActivate, %WinTitle%
-	}
-	Else
-	{
-		WinWait, ahk_pid %PID%, , 3
-		TrayTip, , Activating PID %PID% (%TargetNameOnly%)
-		WinActivate, ahk_pid %PID%
-	}
-
-
-	SetTimer, RunOrActivateTrayTipOff, 1500
-}
-
-; Turn off the tray tip
-RunOrActivateTrayTipOff:
-	SetTimer, RunOrActivateTrayTipOff, off
-	TrayTip
-Return
-
-CapsLock & z::
-run,explorer.exe,,max
-return
-
-CapsLock & 1::RunOrActivate("devenv.exe")
-
-CapsLock & 2::RunOrActivate("ConEmu64.exe")
-
-CapsLock & 3::RunOrActivate("chrome.exe")
+CapsLock & 1::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{1 Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{1 up}
+CapsLock & 2::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{2 Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{2 up}
+CapsLock & 3::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{3 Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{3 up}
+CapsLock & 4::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{4 Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{4 up}
+CapsLock & 5::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{5 Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{5 up}
+CapsLock & 6::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{6 Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{6 up}
+CapsLock & F::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{F Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{F up}
+CapsLock & E::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{E Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{E up}
