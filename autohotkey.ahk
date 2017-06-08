@@ -15,3 +15,4 @@ CapsLock & 5::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{5 Down}{Shift up
 CapsLock & 6::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{6 Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{6 up}
 CapsLock & F::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{F Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{F up}
 CapsLock & E::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{E Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{E up}
+CapsLock & Z::Send {Shift down}{Ctrl down}{Alt down}{LWin down}{Z Down}{Shift up}{LWin up}{Ctrl up}{Alt up}{Z up}
