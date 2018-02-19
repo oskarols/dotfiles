@@ -200,10 +200,11 @@ end
 
 evernote:bind({}, 'escape', evernoteExit)
 
-evernote:bind({}, 'F', function()
-  hs.eventtap.keyStroke({'cmd', 'alt'}, 9)
+-- find notes, deprecated due to native binding
+--[[evernote:bind({}, 'F', function()
+  hs.eventtap.keyStroke({'alt', 'cmd'}, "F")
   evernoteExit()
-end)
+end)]]
 
 evernote:bind({}, 'N', function()
   hs.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
