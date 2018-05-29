@@ -15,6 +15,20 @@
 	    </autogen>
 	</item>
 
+    <item>
+	    <name>Fix MS Sculpt Keyboard</name>
+	    <appendix></appendix>
+
+	    <identifier>ms.sculpt.fix</identifier>
+
+	    <autogen>
+	        --KeyToKey--
+	        KeyCode::DANISH_DOLLAR,
+
+	        KeyCode::BACKQUOTE
+	    </autogen>
+	</item>
+
 	<item>
 	  <name>Hyper + CursorMove to ScrollWheel</name>
 	  <identifier>remap.pointing_relative_hyper</identifier>
