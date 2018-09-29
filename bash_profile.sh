@@ -16,9 +16,9 @@ if [ -f ~/.git-completion.bash ]; then
   . ~/.git-completion.bash
 fi
 
-export GIT_EDITOR="subl -w"
-export VISUAL="subl -w"
-export EDITOR="subl -w"
+export GIT_EDITOR="code --wait"
+export VISUAL="code --wait"
+export EDITOR="code --wait"
 
 # pyenv auto completions
 if which pyenv > /dev/null; then eval "$(pyenv init -)"; fi
