@@ -33,5 +33,5 @@
 	  <name>Hyper + CursorMove to ScrollWheel</name>
 	  <identifier>remap.pointing_relative_hyper</identifier>
 	  <autogen>__PointingRelativeToScroll__ PointingButton::NONE, ModifierFlag::COMMAND_L | ModifierFlag::OPTION_L | ModifierFlag::SHIFT_L | ModifierFlag::CONTROL_L</autogen>
-	</item>
-</root>
+	</item> 
+</root>

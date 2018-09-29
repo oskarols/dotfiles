@@ -65,20 +65,53 @@ end)
 -- APP HOTKEYS
 ---------------------------------------------------------
 
-hs.hotkey.bind(hyper, "1", launchOrCycleFocus("Visual Studio Code", "Code"))
+-- Note: using path here since previous oddities where a bugged out
+-- window with VSC would sometimes be launched.
+hs.hotkey.bind(hyper, "1", launchOrCycleFocus("/Applications/Visual Studio Code.app", "Code"))
 hs.hotkey.bind(hyper, "2", launchOrCycleFocus("iTerm"))
 hs.hotkey.bind(hyper, "3", launchOrCycleFocus("Google Chrome"))
-hs.hotkey.bind(hyper, "4", launchOrCycleFocus("XCode"))
-hs.hotkey.bind(hyper, "5", launchOrCycleFocus("Evernote"))
+hs.hotkey.bind(hyper, "4", launchOrCycleFocus("Firefox"))
+hs.hotkey.bind(hyper, "5", launchOrCycleFocus("Microsoft OneNote"))
 hs.hotkey.bind(hyper, "6", launchOrCycleFocus("Spotify"))
-hs.hotkey.bind(hyper, "7", launchOrCycleFocus("Vox"))
 hs.hotkey.bind(hyper, "8", launchOrCycleFocus("VirtualBoxVM"))
-
 hs.hotkey.bind(hyper, "Z", launchOrCycleFocus("Finder"))
-
 hs.hotkey.bind(hyper, "F", fullScreenCurrent)
 hs.hotkey.bind(hyper, "D", screenToRight)
 hs.hotkey.bind(hyper, "A", screenToLeft)
+
+
+function listAllApplications()
+  local apps = hs.application.runningApplications();
+  hs.fnutils.each(apps, function(app)
+    dbg(app)
+  end)
+end
+
+function listAllAboutCurrentApplication()
+  local app = hs.application.frontmostApplication()
+  dbg(app)
+  local debugInfo = string.format([[
+    Bundle ID: %s
+    Title: %s
+    Name: %s
+    Path: %s
+    PID %s]], app:bundleID(), app:title(), app:name(), app:path(), app:pid())
+    print(debugInfo)
+  end
+
+-- hs.hotkey.bind(hyper, "G", listAllApplications)
+hs.hotkey.bind(hyper, "G", listAllAboutCurrentApplication)
+
+---------------------------------------------------------
+-- REACT TO SCREEN / LAYOUT CHANGES
+---------------------------------------------------------
+
+local screenLayoutChangeWatcher = hs.screen.watcher.new(function()
+  hs.alert("Screen changes — config reloaded")
+  hs.reload()
+end)
+
+screenLayoutChangeWatcher:start()
 
 ---------------------------------------------------------
 -- KEYBOARD LANGUAGE SWITCH
@@ -182,60 +215,6 @@ function resizeWithCell:entered()
   resizeGridWithCell(hideGridAndExit)
 end
 
-
----------------------------------------------------------
--- EVERNOTE
----------------------------------------------------------
-
-local evernote = hs.hotkey.modal.new(hyper, "E")
-
-function evernote:entered()
-  mode.enter("evernote")
-end
-
-local function evernoteExit()
-  evernote:exit()
-  mode.exit("evernote")
-end
-
-evernote:bind({}, 'escape', evernoteExit)
-
--- find notes, deprecated due to native binding
---[[evernote:bind({}, 'F', function()
-  hs.eventtap.keyStroke({'alt', 'cmd'}, "F")
-  evernoteExit()
-end)]]
-
-evernote:bind({}, 'N', function()
-  hs.eventtap.keyStroke({'ctrl', 'cmd'}, 0)
-  evernoteExit()
-end)
-
-
-
----------------------------------------------------------
--- VOX
----------------------------------------------------------
-
-hs.hotkey.bind(hyper, "I", function()
-  local currentlyFocusedWindow = hs.window.focusedWindow()
-  local voxWindow = getApplicationWindow('VOX')
-
-  local vox = voxWindow:application()
-
-  voxWindow:focus()
-
-  vox:selectMenuItem({"Controls", "Go to Current Track"})
-  vox:selectMenuItem({"Edit", "Delete and Move to Trash"})
-
-  -- Have to use long timeout, else doesn't enable the
-  -- menu items .. :(
-  hs.timer.doAfter(1, function()
-    vox:selectMenuItem({"Controls", "Play"})
-    currentlyFocusedWindow:focus()
-  end)
-end)
-
 ---------------------------------------------------------
 -- MISC
 ---------------------------------------------------------
@@ -256,7 +235,8 @@ hs.hotkey.bind(hyper, "X", function()
   hs.focus()
 end)
 
-hs.hotkey.bind(hyper, "R", function()
+hs.hotkey.bind(hyper, "R", "Reloading config", function()
   hs.reload()
-  hs.alert.show("Config loaded")
 end)
+
+hs.alert("Loaded HS config")
