@@ -49,21 +49,21 @@ end
 
 -- Create a unique string for a window
 -- @returns string
-function hs.window:key()
+function windowKey(window)
   local applicationName = compose(
     getProperty("application"),
     getProperty("title")
-  )(self)
+  )(window)
 
-  return string.format("%s:%s", applicationName, self:id())
+  return string.format("%s:%s", applicationName, window:id())
 end
 
 
-function hs.window:isMaximized()
-  local screen = self:screen()
+function windowIsMaximized(window)
+  local screen = window:screen()
   local screenFrame = screen:frame()
 
-  return compareShallow(self:frame(), screenFrame)
+  return compareShallow(window:frame(), screenFrame)
 end
 
 
@@ -158,7 +158,7 @@ fullScreenCurrent = function()
     -- no fullscreen
       -- toggle fullscreen
 
-  if window:isMaximized() then
+  if windowIsMaximized(window) then
     dbg('NOT MAXIMIZED')
     if appStates:lookup(window) then
       dbg('FOUND STATE')
@@ -242,8 +242,12 @@ local function getNextWindow(windows, window)
     windows = hs.appfinder.appFromName(windows):allWindows()
   end
 
-  windows = filter(windows, hs.window.isStandard)
-  windows = filter(windows, hs.window.isVisible)
+  windows = filter(windows, function(window)
+    return window:isStandard()
+  end)
+  windows = filter(windows, function(window)
+    return window:isVisible()
+  end)
 
   -- need to sort by ID, since the default order of the window
   -- isn't usable when we change the mainWindow
