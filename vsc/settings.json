@@ -1,0 +1,16 @@
+{
+    "editor.fontFamily": "Fira Code",
+    "editor.fontLigatures": true,
+    "editor.fontSize": 13,
+    "workbench.colorTheme": "Moonlight II",
+    "editor.cursorStyle": "block-outline",
+    "editor.minimap.enabled": false,
+    "workbench.editor.highlightModifiedTabs": true,
+    "telemetry.enableTelemetry": false,
+    "telemetry.enableCrashReporter": false,
+    "window.menuBarVisibility": "hidden",
+    "window.titleBarStyle": "custom",
+    "editor.formatOnSave": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true
+}
