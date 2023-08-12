@@ -6,11 +6,10 @@
     "editor.cursorStyle": "block-outline",
     "editor.minimap.enabled": false,
     "workbench.editor.highlightModifiedTabs": true,
-    "telemetry.enableTelemetry": false,
-    "telemetry.enableCrashReporter": false,
     "window.menuBarVisibility": "hidden",
     "window.titleBarStyle": "custom",
     "editor.formatOnSave": true,
     "files.insertFinalNewline": true,
-    "files.trimFinalNewlines": true
+    "files.trimFinalNewlines": true,
+    "telemetry.telemetryLevel": "off"
 }
