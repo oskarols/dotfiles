@@ -59,7 +59,7 @@ alias gpush="git push origin HEAD"
 alias gs="git status"
 alias gresetlast="git reset --soft HEAD~1 && git reset HEAD ."
 
-alias grbmain="git checkout master && git pull && git checkout - && git rebase master"
+alias grbmain="git checkout main && git pull && git checkout - && git rebase main"
 # Function since otherwise the inner var gets immediately
 # executed when opening the shell
 grball() {
