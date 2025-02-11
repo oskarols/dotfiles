@@ -56,9 +56,23 @@ alias gpwl="git push origin HEAD --force-with-lease"
 alias gbranch="git for-each-ref --sort='authordate:iso8601' --format=' %(authordate:relative)%09%(refname:short)' refs/heads"
 alias gb="git for-each-ref --sort=committerdate refs/heads/ --format='%(color:green)%(committerdate:relative)%(color:reset)%09%(HEAD) %(color:yellow)%(refname:short)%(color:reset)%09%09%(contents:subject)'"
 alias gpush="git push origin HEAD"
-alias grebasemaster="git checkout master && git pull && git checkout - && git rebase master"
 alias gs="git status"
 alias gresetlast="git reset --soft HEAD~1 && git reset HEAD ."
+
+alias grbmain="git checkout master && git pull && git checkout - && git rebase master"
+# Function since otherwise the inner var gets immediately
+# executed when opening the shell
+grball() {
+  git rebase -i $(git merge-base main HEAD)
+}
+
+# Github CLI
+alias ghpr="gh pr view"
+alias ghprc="gh pr checkout"
+
+# Github CLI
+alias ghpr="gh pr view"
+alias ghprc="gh pr checkout"
 
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
